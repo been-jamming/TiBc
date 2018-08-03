@@ -1,7 +1,5 @@
 /*
 Parser for B compiler
-
-by Ben Jones
 */
 
 #include <stdlib.h>
@@ -99,7 +97,7 @@ struct token{
 	};
 };
 
-unsigned char is_alpha(char c){
+unsigned char is_alpha(unsigned char c){
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
@@ -143,6 +141,30 @@ char *get_identifier(char **c){
 	memcpy(output, orig_c, string_length);
 	
 	return output;
+}
+
+void print_token(token t){
+	if(t.type == LITERAL){
+		if(t.sub_type == INTEGER){
+			printf("%d", t.int_value);
+		} else if(t.sub_type == CHARACTER){
+			printf("%d", t.char_value);
+		} else if(t.sub_type == STRING){
+			printf("%s", t.string_value);
+		}
+	} else if(t.type == OPERATOR){
+		if(t.sub_type == ASSIGN){
+			printf("=");
+		} else if(t.sub_type == ADD){
+			printf("+");
+		} else if(t.sub_type == SUBTRACT){
+			printf("-");
+		} else if(t.sub_type == MULTIPLY){
+			printf("*");
+		} else if(t.sub_type == DIVIDE){
+			printf("/");
+		}
+	}
 }
 
 token get_token(char **c){
@@ -400,7 +422,22 @@ token get_token(char **c){
 	}
 }
 
-void parse_expression(char **c, token *token_list, unsigned int *token_index, unsigned int *token_length, token closing_token){
+void add_token(token **token_list, token t, unsigned int *token_index, unsigned int *token_length){
+	token *new_tokens;
+	
+	while(*token_index >= *token_length){
+		*token_length += 10;
+		new_tokens = calloc(*token_length, sizeof(token));
+		memcpy(new_tokens, *token_list, sizeof(token)*(*token_length - 10));
+		free(*token_list);
+		*token_list = new_tokens;
+	}
+	
+	(*token_list)[*token_index] = t;
+	*token_index += 1;
+}
+
+void parse_expression(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length, token closing_token){
 	char **orig_c;
 	char *temp_c;
 	char *temp_c2;
@@ -425,10 +462,16 @@ void parse_expression(char **c, token *token_list, unsigned int *token_index, un
 			} else if(next_token.type == OPERATOR || (current_token.type == IDENTIFIER && next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES)){
 				add_token(token_list, current_token, token_index, token_length);
 				add_token(token_list, next_token, token_index, token_length);
+			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
+				add_token(token_list, current_token, token_index, token_length);
+				add_token(token_list, next_token, token_index, token_length);
+				return;
 			} else {
 				printf("Unexpected token: %c\n", *temp_c2);
+				exit(1);
 			}
 		} else if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
+			add_token(token_list, current_token, token_index, token_length);
 			parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = CLOSEPARENTHESES});
 		}
 		
@@ -445,5 +488,25 @@ void parse_expression(char **c, token *token_list, unsigned int *token_index, un
 }
 
 int main(){
+	char test_program_const[] = "hello + (this + is + a) + test;";
+	char *test_program;
+	token **token_list;
+	unsigned int token_length;
+	unsigned int token_index;
+	
+	test_program = malloc(sizeof(test_program_const)*sizeof(char));
+	strcpy(test_program, test_program_const);
+	token_list = malloc(sizeof(token *));
+	*token_list = calloc(10, sizeof(token));
+	token_length = 10;
+	token_index = 0;
+	
+	parse_expression(&test_program, token_list, &token_index, &token_length, (token) {.type = CONTROL, .sub_type = SEMICOLON});
+	
+	unsigned int i;
+	for(i = 0; i < token_index; i++){
+		printf("%d %d\n", (int) ((*token_list)[i].type), (int) ((*token_list)[i].sub_type));
+	}
+	
 	return 0;
 }
