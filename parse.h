@@ -39,7 +39,7 @@
 	#define BITOR 21
 	#define BITXOR 22
 	#define BITNOT 23
-	#define ELEMENT 24
+	#define ELEMENT 6
 
 //Control
 
@@ -75,6 +75,8 @@
 //Identifier
 
 #define IDENTIFIER 6
+
+#define START 7
 
 typedef struct token token;
 

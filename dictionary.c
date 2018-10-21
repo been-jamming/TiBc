@@ -75,7 +75,7 @@ void write_dictionary(dictionary *dict, unsigned char *string, void *value, unsi
 	
 	dict->value = value;
 }
-
+/*
 int main(){
 	dictionary test_dictionary;
 	test_dictionary = create_dictionary((void *) 0);
@@ -86,4 +86,4 @@ int main(){
 
 	printf("%d\n", (int) read_dictionary(test_dictionary, "bey", 0));
 	return 0;
-}
+}*/

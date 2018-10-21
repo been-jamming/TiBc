@@ -456,7 +456,7 @@ void parse_block(char **c, token **token_list, unsigned int *token_index, unsign
 	current_token = get_token(c);
 	add_token(token_list, current_token, token_index, token_length);
 }
-
+/*
 int main(){
 	char test_program_const[] = "{if(a == 1){hello + (this + is + a) + test;}}";
 	char *test_program;
@@ -479,4 +479,4 @@ int main(){
 	}
 	
 	return 0;
-}
+}*/

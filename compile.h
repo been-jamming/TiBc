@@ -1,3 +1,6 @@
+#include "linked_list.h"
+#include "dictionary.h"
+
 #define BLOCK 7
 
 typedef struct variable variable;
@@ -28,8 +31,16 @@ struct expression{
 			variable *arguments;
 			unsigned int num_arguments;
 		};
-		block *code_block;
+		struct{
+			expression *condition;
+			block *code_block;
+		};
+		variable *var_pointer;
+		unsigned int int_value;
+		char char_value;
+		char *string_value;
 	};
+	expression *parent;
 };
 
 variable *create_variable(unsigned char type, unsigned int offset);
@@ -37,3 +48,10 @@ variable *create_variable(unsigned char type, unsigned int offset);
 block *create_block();
 
 expression *create_expression(unsigned char type, unsigned char sub_type);
+
+expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
+
+expression *literal_expression(token t);
+
+void order_expression(expression **expr);
+
