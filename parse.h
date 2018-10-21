@@ -76,8 +76,6 @@
 
 #define IDENTIFIER 6
 
-#define START 7
-
 typedef struct token token;
 
 struct token{
