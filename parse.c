@@ -438,6 +438,32 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = CLOSEPARENTHESES});
 			skip_whitespace(c);
 			parse_block(c, token_list, token_index, token_length);
+		} else if(current_token.sub_type == ELSE){
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != CONTROL || current_token.sub_type != OPENBRACES){
+				printf("Expected opening token '{'\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
+			parse_block(c, token_list, token_index, token_length);
+		} else if(current_token.sub_type == VAR){
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != IDENTIFIER){
+				printf("Expected identifier\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != CONTROL || current_token.sub_type != SEMICOLON){
+				printf("Expected ';' token\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
 		}
 	} else {
 		*token_index = old_token_index;
