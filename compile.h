@@ -4,11 +4,20 @@
 #define LOCAL 0
 #define GLOBAL 1
 
+typedef struct block block;
+
+struct block{
+	linked_list *statements;
+	dictionary *variables;
+};
+
 typedef struct variable variable;
 
 struct variable{
 	unsigned char type;
+	unsigned char is_function;
 	unsigned int offset;
+	block *function;
 };
 
 typedef struct constant constant;
@@ -21,13 +30,6 @@ struct constant{
 		char *string_value;
 	};
 	unsigned char offset;
-};
-
-typedef struct block block;
-
-struct block{
-	linked_list *statements;
-	dictionary *variables;
 };
 
 typedef struct expression expression;
@@ -86,3 +88,6 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 statement *compile_statement(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset);
 
 block *compile_block(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset);
+
+void compile_program(dictionary *global_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset);
+

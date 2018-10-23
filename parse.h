@@ -51,6 +51,7 @@
 	#define OPENPARENTHESES 3
 	#define CLOSEPARENTHESES 4
 	#define SEMICOLON 5
+	#define COMMA 6
 
 //Key words
 
@@ -75,6 +76,10 @@
 //Identifier
 
 #define IDENTIFIER 6
+
+//End of file
+
+#define END 7
 
 typedef struct token token;
 
@@ -109,4 +114,6 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 void parse_statement(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 
 void parse_block(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
+
+void parse_program(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 

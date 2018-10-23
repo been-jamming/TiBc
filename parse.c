@@ -171,6 +171,11 @@ token get_token(char **c){
 		output.type = CONTROL;
 		output.sub_type = CLOSEBRACES;
 		return output;
+	} else if(**c == ','){
+		++*c;
+		output.type = CONTROL;
+		output.sub_type = COMMA;
+		return output;
 	} else if(**c == '\''){
 		++*c;
 		output.type = LITERAL;
@@ -497,6 +502,61 @@ void parse_block(char **c, token **token_list, unsigned int *token_index, unsign
 	current_token = get_token(c);
 	add_token(token_list, current_token, token_index, token_length);
 }
+
+void parse_program(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length){
+	token current_token;
+	skip_whitespace(c);
+
+	while(**c){
+		current_token = get_token(c);
+		if(current_token.type != KEYWORD || current_token.sub_type != VAR){
+			printf("Expected 'var' keyword\n");
+			exit(1);
+		}
+
+		add_token(token_list, current_token, token_index, token_length);
+		skip_whitespace(c);
+		current_token = get_token(c);
+		if(current_token.type != IDENTIFIER){
+			printf("Expected identifier hi %d %d\n", (int) current_token.type, (int) current_token.sub_type);
+			exit(1);
+		}
+		add_token(token_list, current_token, token_index, token_length);
+		skip_whitespace(c);
+		current_token = get_token(c);
+		if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			while(**c && (current_token.type != CONTROL || current_token.sub_type != CLOSEPARENTHESES)){
+				if(current_token.type != IDENTIFIER){
+					printf("Expected identifier %d %d\n", (int) current_token.type, (int) current_token.sub_type);
+					exit(1);
+				}
+				add_token(token_list, current_token, token_index, token_length);
+				skip_whitespace(c);
+				current_token = get_token(c);
+				if(current_token.type == CONTROL && current_token.sub_type == CLOSEPARENTHESES){
+					add_token(token_list, current_token, token_index, token_length);
+					break;
+				} else if(current_token.type == CONTROL && current_token.sub_type == COMMA){
+					add_token(token_list, current_token, token_index, token_length);
+				} else {
+					printf("Expected ',' or ')' tokens\n");
+					exit(1);
+				}
+			}
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			parse_block(c, token_list, token_index, token_length);
+		} else if(current_token.type == CONTROL && current_token.sub_type == SEMICOLON){
+			add_token(token_list, current_token, token_index, token_length);
+		}
+		skip_whitespace(c);
+	}
+	add_token(token_list, (token) {.type = END}, token_index, token_length);
+}
+
 /*
 int main(){
 	char test_program_const[] = "1 + 2 + 3*5;";

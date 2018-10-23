@@ -240,12 +240,84 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 block *compile_block(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset){
 	block *output;
 	output = create_block(local_space);
+	++*token_list;
+	--*token_length;
 	
 	while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEBRACES){
 		add_linked_list(&(output->statements), create_linked_list(compile_statement(global_space, local_space, token_list, token_length, const_list, const_offset, local_offset)));
 	}
-	
+
 	return output;
+}
+
+void compile_program(dictionary *global_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset){
+	variable *var_pointer;
+	variable *local_var_pointer;
+	dictionary *new_local_space;
+	unsigned int local_offset;
+
+	while((*token_list)->type != END){
+		if((*token_list)->type == KEYWORD && (*token_list)->sub_type == VAR){
+			++*token_list;
+			--*token_length;
+			if((*token_list)->type == IDENTIFIER){
+				if(read_dictionary(*global_space, (*token_list)->string_value, 0)){
+					var_pointer = read_dictionary(*global_space, (*token_list)->string_value, 0);
+				} else {
+					var_pointer = create_variable(GLOBAL, 0);
+					write_dictionary(global_space, (*token_list)->string_value, var_pointer, 0);
+				}
+				++*token_list;
+				--*token_length;
+				if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES){
+					var_pointer->is_function = 1;
+					new_local_space = malloc(sizeof(dictionary));
+					*new_local_space = create_dictionary((void *) 0);
+					++*token_list;
+					--*token_length;
+					local_offset = 0;
+					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
+						if((*token_list)->type != IDENTIFIER){
+							printf("Expected identifier\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
+							exit(1);
+						} else {
+							local_var_pointer = create_variable(LOCAL, local_offset);
+							write_dictionary(new_local_space, (*token_list)->string_value, local_var_pointer, 0);
+							++local_offset;
+							++*token_list;
+							--*token_length;
+							if((*token_list)->type != CONTROL || ((*token_list)->sub_type != COMMA && (*token_list)->sub_type != CLOSEPARENTHESES)){
+								printf("Expected ',' token\n");
+								exit(1);
+							}
+						}
+						++*token_list;
+						--*token_length;
+					}
+					++*token_list;
+					--*token_length;
+					if((*token_list)->type != CONTROL || (*token_list)->sub_type != OPENBRACES){
+						printf("Expected '{' token\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
+						exit(1);
+					} else {
+						var_pointer->function = compile_block(global_space, new_local_space, token_list, token_length, const_list, const_offset, &local_offset);
+					}
+				} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == SEMICOLON){
+					var_pointer->is_function = 0;
+					var_pointer->offset = *const_offset;
+					++*const_offset;
+				} else {
+					printf("Expected ';' or '(' token\n");
+					exit(1);
+				}
+				++*token_list;
+				--*token_length;
+			}
+		} else {
+			printf("Expected keyword 'var'\n");
+			exit(1);
+		}
+	}
 }
 
 void print_expression(expression *expr){
@@ -282,7 +354,7 @@ void print_expression(expression *expr){
 }
 
 int main(){
-	char *test_program = "{(ben+3*3)/4 - 5*5;var hi;}";
+	char *test_program = "var ben; var mi(){var printf; printf + 1;}";
 	char **test_program_pointer;
 	token *token_list;
 	token **token_list_pointer;
@@ -304,7 +376,7 @@ int main(){
 
 	test_program_pointer = &test_program;
 	
-	parse_block(test_program_pointer, token_list_pointer, &token_index, &token_length);
+	parse_program(test_program_pointer, token_list_pointer, &token_index, &token_length);
 
 	expression *expr;
 	dictionary global_space;
@@ -320,9 +392,7 @@ int main(){
 
 	write_dictionary(&local_space, "ben", var_pointer, 0);
 
-	++*token_list_pointer;
-
-	hi = compile_block(&global_space, &local_space, token_list_pointer, &token_index, &const_list, &const_offset, &local_offset);
-	printf("hello world\n");
+	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
+	printf("hello world!\n");
 	return 0;
 }
