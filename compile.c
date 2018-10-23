@@ -6,12 +6,13 @@
 dictionary global_namespace;
 unsigned const int operator_precedence[] = {0, 0, 2, 2, 1, 1, 0};
 
-variable *create_variable(unsigned char type, unsigned int offset){
+variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	variable *output;
 
 	output = malloc(sizeof(variable));
 	output->type = type;
 	output->offset = offset;
+	output->name = name;
 	
 	return output;
 }
@@ -175,7 +176,7 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 				printf("Redefinition of variable: %s\n", (*token_list)->string_value);
 				exit(1);
 			} else {
-				output->var_pointer = create_variable(LOCAL, *local_offset);
+				output->var_pointer = create_variable(LOCAL, *local_offset, (*token_list)->string_value);
 				++*local_offset;
 				write_dictionary(local_space, (*token_list)->string_value, output->var_pointer, 0);
 				++*token_list;
@@ -254,7 +255,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 	variable *var_pointer;
 	variable *local_var_pointer;
 	dictionary *new_local_space;
-	unsigned int local_offset;
+	unsigned int *local_offset;
 
 	while((*token_list)->type != END){
 		if((*token_list)->type == KEYWORD && (*token_list)->sub_type == VAR){
@@ -264,7 +265,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 				if(read_dictionary(*global_space, (*token_list)->string_value, 0)){
 					var_pointer = read_dictionary(*global_space, (*token_list)->string_value, 0);
 				} else {
-					var_pointer = create_variable(GLOBAL, 0);
+					var_pointer = create_variable(GLOBAL, 0, (*token_list)->string_value);
 					write_dictionary(global_space, (*token_list)->string_value, var_pointer, 0);
 				}
 				++*token_list;
@@ -275,15 +276,15 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					*new_local_space = create_dictionary((void *) 0);
 					++*token_list;
 					--*token_length;
-					local_offset = 0;
+					local_offset = malloc(sizeof(unsigned int));
 					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
 						if((*token_list)->type != IDENTIFIER){
 							printf("Expected identifier\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
 							exit(1);
 						} else {
-							local_var_pointer = create_variable(LOCAL, local_offset);
+							local_var_pointer = create_variable(LOCAL, *local_offset, (*token_list)->string_value);
 							write_dictionary(new_local_space, (*token_list)->string_value, local_var_pointer, 0);
-							++local_offset;
+							++*local_offset;
 							++*token_list;
 							--*token_length;
 							if((*token_list)->type != CONTROL || ((*token_list)->sub_type != COMMA && (*token_list)->sub_type != CLOSEPARENTHESES)){
@@ -300,7 +301,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 						printf("Expected '{' token\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
 						exit(1);
 					} else {
-						var_pointer->function = compile_block(global_space, new_local_space, token_list, token_length, const_list, const_offset, &local_offset);
+						var_pointer->function = compile_block(global_space, new_local_space, token_list, token_length, const_list, const_offset, local_offset);
 					}
 				} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == SEMICOLON){
 					var_pointer->is_function = 0;
@@ -394,5 +395,6 @@ int main(){
 
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
 	printf("hello world!\n");
+	while(1){}
 	return 0;
 }

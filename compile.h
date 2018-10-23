@@ -9,6 +9,7 @@ typedef struct block block;
 struct block{
 	linked_list *statements;
 	dictionary *variables;
+	unsigned int *local_size;
 };
 
 typedef struct variable variable;
@@ -17,6 +18,7 @@ struct variable{
 	unsigned char type;
 	unsigned char is_function;
 	unsigned int offset;
+	char *name;
 	block *function;
 };
 
@@ -71,9 +73,9 @@ struct statement{
 	};
 };
 
-variable *create_variable(unsigned char type, unsigned int offset);
+variable *create_variable(unsigned char type, unsigned int offset, char *name);
 
-block *create_block(dictionary *variables);
+block *create_block(dictionary *variables, unsigned int *local_size);
 
 expression *create_expression(unsigned char type, unsigned char sub_type);
 

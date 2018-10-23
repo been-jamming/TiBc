@@ -1,7 +1,6 @@
 typedef struct dictionary dictionary;
 
 struct dictionary{
-	unsigned char bits;
 	dictionary *next_chars[8];
 	void *value;
 };
@@ -12,3 +11,4 @@ void *read_dictionary(dictionary dict, unsigned char *string, unsigned char offs
 
 void write_dictionary(dictionary *dict, unsigned char *string, void *value, unsigned char offset);
 
+void iterate_dictionary(dictionary dict, void (*func)(void *));

@@ -4,7 +4,7 @@
 #include <string.h>
 
 dictionary create_dictionary(void *value){
-	dictionary output = (dictionary) {.bits = 0, .value = value};
+	dictionary output = (dictionary) {.value = value};
 	memset(output.next_chars, 0, sizeof(dictionary *)*8);
 	return output;
 }
@@ -75,6 +75,21 @@ void write_dictionary(dictionary *dict, unsigned char *string, void *value, unsi
 	
 	dict->value = value;
 }
+
+void iterate_dictionary(dictionary dict, void (*func)(void *)){
+	unsigned char i;
+	
+	if(dict.value){
+		func(dict.value);
+	}
+
+	for(i = 0; i < 8; i++){
+		if(dict.next_chars[i]){
+			iterate_dictionary(*dict.next_chars[i], func);
+		}
+	}
+}
+
 /*
 int main(){
 	dictionary test_dictionary;
