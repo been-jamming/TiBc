@@ -1,8 +1,8 @@
 #include "linked_list.h"
 #include "dictionary.h"
 
-#define LOCAL 0
-#define GLOBAL 1
+#define LOCAL 8
+#define GLOBAL 9
 
 typedef struct block block;
 
@@ -72,6 +72,8 @@ struct statement{
 		variable *var_pointer;
 	};
 };
+
+constant *create_constant(unsigned char type, unsigned int offset);
 
 variable *create_variable(unsigned char type, unsigned int offset, char *name);
 

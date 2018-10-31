@@ -26,11 +26,12 @@ constant *create_constant(unsigned char type, unsigned int offset){
 	return output;
 }
 
-block *create_block(dictionary *variables){
+block *create_block(dictionary *variables, unsigned int *local_size){
 	block *output;
 	output = malloc(sizeof(block));
 	output->statements = create_linked_list((void *) 0);
 	output->variables = variables;
+	output->local_size = local_size;
 
 	return output;
 }
@@ -167,7 +168,7 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 	output = create_statement(0, 0);
 	
 	if((*token_list)->type == KEYWORD){
-		output->type = (*token_list)->type;
+		output->type = KEYWORD;
 		output->sub_type = (*token_list)->sub_type;
 		if((*token_list)->sub_type == VAR){
 			++*token_list;
@@ -240,13 +241,18 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 
 block *compile_block(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset){
 	block *output;
-	output = create_block(local_space);
+	linked_list *original_statements;
+	
+	output = create_block(local_space, local_offset);
+	original_statements = output->statements;
 	++*token_list;
 	--*token_length;
 	
 	while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEBRACES){
 		add_linked_list(&(output->statements), create_linked_list(compile_statement(global_space, local_space, token_list, token_length, const_list, const_offset, local_offset)));
 	}
+
+	output->statements = original_statements;
 
 	return output;
 }
@@ -277,6 +283,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					++*token_list;
 					--*token_length;
 					local_offset = malloc(sizeof(unsigned int));
+					*local_offset = 0;
 					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
 						if((*token_list)->type != IDENTIFIER){
 							printf("Expected identifier\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
@@ -354,7 +361,7 @@ void print_expression(expression *expr){
 	}
 }
 
-int main(){
+/*int main(){
 	char *test_program = "var ben; var mi(){var printf; printf + 1;}";
 	char **test_program_pointer;
 	token *token_list;
@@ -397,4 +404,4 @@ int main(){
 	printf("hello world!\n");
 	while(1){}
 	return 0;
-}
+}*/
