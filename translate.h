@@ -21,6 +21,7 @@
 #define JMP 19
 #define MOV 20
 #define POPOFFSET 21
+#define PUSHPC 22
 
 typedef struct instruction instruction;
 

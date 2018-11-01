@@ -104,6 +104,8 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 	expression *root;
 	expression *current_expression;
 	expression *child;
+	linked_list *arguments;
+	linked_list *new_argument;
 
 	root = create_expression(0, 0);
 	current_expression = root;
@@ -121,17 +123,42 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			current_expression = current_expression->parent;
 		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES && !current_expression->expr2){
 			++*token_list;
+			--*token_length;
 			current_expression->expr2 = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
 			current_expression->expr2->do_order = 0;
+		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES){
+			/*spooky*/
+			current_expression->parent = create_expression(RUNFUNCTION, 0);
+			current_expression->parent->expr2 = current_expression;
+			current_expression = current_expression->parent;
+			++*token_list;
+			--*token_length;
+			if((*token_list)->type == CONTROL && (*token_list)->sub_type == CLOSEPARENTHESES){
+				arguments = (linked_list *) 0;
+				printf("no arguments!!!");
+			} else {
+				arguments = create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset));
+				new_argument = arguments;
+				printf("An argument!!");
+				while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
+					printf("hi");
+					++*token_list;
+					--*token_length;
+					add_linked_list(&new_argument, create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset)));
+				}
+			}
+			current_expression->func_arguments = arguments;
 		}
 		
 		++*token_list;
 		--*token_length;
 	}
-	
-	root->parent->expr1 = root->expr2;
+	if(root->parent){
+		root->parent->expr1 = root->expr2;
+	} else {
+		current_expression = current_expression->expr2;
+	}
 	free(root);
-
 	order_expression(&current_expression);
 
 	return current_expression;
@@ -262,6 +289,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 	variable *local_var_pointer;
 	dictionary *new_local_space;
 	unsigned int *local_offset;
+	unsigned int num_args;
 
 	while((*token_list)->type != END){
 		if((*token_list)->type == KEYWORD && (*token_list)->sub_type == VAR){
@@ -283,8 +311,10 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					++*token_list;
 					--*token_length;
 					local_offset = malloc(sizeof(unsigned int));
+					num_args = 0;
 					*local_offset = 0;
 					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
+						num_args++;
 						if((*token_list)->type != IDENTIFIER){
 							printf("Expected identifier\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
 							exit(1);
@@ -309,6 +339,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 						exit(1);
 					} else {
 						var_pointer->function = compile_block(global_space, new_local_space, token_list, token_length, const_list, const_offset, local_offset);
+						var_pointer->function->num_args = num_args;
 					}
 				} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == SEMICOLON){
 					var_pointer->is_function = 0;

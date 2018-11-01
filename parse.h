@@ -81,6 +81,8 @@
 
 #define END 7
 
+#define RUNFUNCTION 8
+
 typedef struct token token;
 
 struct token{

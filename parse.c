@@ -361,6 +361,7 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	token last_token;
 	token current_token;
 	token next_token;
+
 	last_token.type = 0;
 	last_token.sub_type = 0;
 	orig_c = c;
@@ -370,17 +371,31 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	current_token = get_token(c);
 	while(current_token.type != closing_token.type || current_token.sub_type != closing_token.sub_type){
 		if(current_token.type == LITERAL || current_token.type == IDENTIFIER){
+			printf("1");
+			add_token(token_list, current_token, token_index, token_length);
+			
 			temp_c2 = *c;
 			next_token = get_token(c);
+			printf("2");
 			
+			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
+				add_token(token_list, next_token, token_index, token_length);
+				while(*(*c - 1) != ')'){
+					parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+				}
+				skip_whitespace(c);
+				printf("%c", **c);
+				temp_c2 = *c;
+				next_token = get_token(c);
+			}
+			printf("3");
+
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){
 				printf("Expected operator instead of: %c\n", *temp_c2);
 				exit(1);
-			} else if(next_token.type == OPERATOR || (current_token.type == IDENTIFIER && next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES)){
-				add_token(token_list, current_token, token_index, token_length);
+			} else if(next_token.type == OPERATOR){
 				add_token(token_list, next_token, token_index, token_length);
-			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
-				add_token(token_list, current_token, token_index, token_length);
+			} else if((next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type) || (next_token.type == CONTROL && next_token.sub_type == CLOSEPARENTHESES)){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
 			} else {
@@ -393,10 +408,23 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			temp_c2 = *c;
 			next_token = get_token(c);
 
+			if(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
+				temp_c2 = *c;
+				next_token = get_token(c);
+				while(next_token.type != CONTROL || next_token.sub_type != CLOSEPARENTHESES){
+					*c = temp_c2;
+					parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+					temp_c2 = *c;
+					next_token = get_token(c);
+				}
+				temp_c2 = *c;
+				next_token = get_token(c);
+			}
+
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){
 				printf("Expected operator instead of: %c\n", *temp_c2);
 				exit(1);
-			} else if(next_token.type == OPERATOR || (current_token.type == IDENTIFIER && next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES)){
+			} else if(next_token.type == OPERATOR){
 				add_token(token_list, next_token, token_index, token_length);
 			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
 				add_token(token_list, next_token, token_index, token_length);
@@ -405,6 +433,17 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 				printf("Unexpected token: %c\n", *temp_c2);
 				exit(1);
 			}
+		} else if(current_token.type == OPERATOR && current_token.sub_type == MULTIPLY){
+			current_token.type = UNARY;
+			current_token.sub_type = DEREFERENCE;
+			add_token(token_list, current_token, token_index, token_length);
+		} else if(current_token.type == OPERATOR && current_token.sub_type == AND){
+			current_token.type = UNARY;
+			current_token.sub_type = REFERENCE;
+			add_token(token_list, current_token, token_index, token_length);
+		} else {
+			printf("Unexpected token: %c\n", *(*c - 1));
+			exit(1);
 		}
 		skip_whitespace(c);
 		if(!**c){

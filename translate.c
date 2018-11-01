@@ -26,6 +26,7 @@ void add_instruction(instruction **instructions, instruction *i){
 void translate_expression(expression *expr, instruction **instructions, unsigned int *local_offset){
 	instruction *load_a;
 	instruction *operation;
+	linked_list *argument;
 
 	if(expr->type == LITERAL){
 		load_a = create_instruction(PUSH);
@@ -50,6 +51,22 @@ void translate_expression(expression *expr, instruction **instructions, unsigned
 			--*local_offset;
 		}
 		add_instruction(instructions, operation);
+	} else if(expr->type == RUNFUNCTION){
+		operation = create_instruction(PUSHPC);
+		add_instruction(instructions, operation);
+		argument = expr->func_arguments;
+		while(argument){
+			printf("argumentlalala\n");
+			translate_expression((expression *) argument->value, instructions, local_offset);
+			argument = argument->next;
+		}
+		printf("getting function pointer");
+		printf(" %d ", (int) expr->expr2);
+		translate_expression(expr->expr2, instructions, local_offset);
+		operation = create_instruction(JMPSTACK);
+		add_instruction(instructions, operation);
+	} else {
+		printf("unrecognized expression %d\n", (int) expr->type);
 	}
 }
 
@@ -123,13 +140,17 @@ void print_instructions(instruction *instructions){
 			printf("ADDSTACK");
 		} else if(instructions->opcode == MULSTACK){
 			printf("MULSTACK");
+		} else if(instructions->opcode == JMPSTACK){
+			printf("JMPSTACK");
+		} else if(instructions->opcode == PUSHPC){
+			printf("PUSHPC");
 		}
 		printf("\n");
 	}
 }
 
 int main(){
-	char *test_program = "var main(){var a; var b; 2*a+3*b;a + b;}";
+	char *test_program = "var main(){var a; var b; main(0);}";
 	char **test_program_pointer;
 	token *token_list;
 	token **token_list_pointer;
@@ -157,6 +178,7 @@ int main(){
 	test_program_pointer = &test_program;
 	
 	parse_program(test_program_pointer, token_list_pointer, &token_index, &token_length);
+	printf("parsed");
 
 	expression *expr;
 	dictionary global_space;
@@ -173,6 +195,7 @@ int main(){
 	write_dictionary(&local_space, "ben", var_pointer, 0);
 
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
+	printf("compiled");
 	translate_function((variable *) read_dictionary(global_space, "main", 0), &instructions);
 	print_instructions(original_instructions);
 	printf("Done!!!\n");

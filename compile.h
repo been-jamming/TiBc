@@ -3,6 +3,8 @@
 
 #define LOCAL 8
 #define GLOBAL 9
+#define LOCALINDIRECT 3
+#define GLOBALINDIRECT 4
 
 typedef struct block block;
 
@@ -10,6 +12,7 @@ struct block{
 	linked_list *statements;
 	dictionary *variables;
 	unsigned int *local_size;
+	unsigned int num_args;
 };
 
 typedef struct variable variable;
@@ -39,23 +42,14 @@ typedef struct expression expression;
 struct expression{
 	unsigned char type;
 	unsigned char sub_type;
-	union{
-		struct{
-			expression *expr1;
-			expression *expr2;
-			unsigned char do_order;
-		};
-		struct{
-			variable *arguments;
-			unsigned int num_arguments;
-		};
-		struct{
-			expression *condition;
-			block *code_block;
-		};
-		variable *var_pointer;
-		constant *const_pointer;
-	};
+	expression *expr1;
+	expression *expr2;
+	unsigned char do_order;
+	expression *condition;
+	block *code_block;
+	variable *var_pointer;
+	constant *const_pointer;
+	linked_list *func_arguments;
 	expression *parent;
 };
 
