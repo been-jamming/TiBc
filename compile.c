@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 dictionary global_namespace;
-unsigned const int operator_precedence[] = {0, 0, 2, 2, 1, 1, 0};
+unsigned const int operator_precedence[] = {0, 999, 3, 3, 2, 2, 1};
 
 variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	variable *output;
@@ -255,7 +255,6 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 					printf("Expected '{' token\n");
 					exit(1);
 				} else {
-					printf("first token after: %d %d\n", (int) (*token_list + 1)->type, (int) (*token_list + 1)->sub_type);
 					output->code = compile_block(global_space, local_space, token_list, token_length, const_list, const_offset, local_offset);
 					++*token_list;
 					--*token_length;

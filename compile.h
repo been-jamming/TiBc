@@ -3,8 +3,9 @@
 
 #define LOCAL 8
 #define GLOBAL 9
-#define LOCALINDIRECT 3
-#define GLOBALINDIRECT 4
+#define LOCALINDIRECT 10
+#define GLOBALINDIRECT 11
+#define STACKRELATIVE 12
 
 typedef struct block block;
 

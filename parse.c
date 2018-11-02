@@ -433,7 +433,6 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			
 			temp_c2 = *c;
 			next_token = get_token(c);
-			
 			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
 				add_token(token_list, next_token, token_index, token_length);
 				skip_whitespace(c);
@@ -461,7 +460,6 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			} else if(next_token.type == LITERAL && next_token.sub_type == INTEGER){
 				if(next_token.int_value <= 0){
 					add_token(token_list, (token) {.type = OPERATOR, .sub_type = SUBTRACT}, token_index, token_length);
-					do_next_token = 0;
 				} else {
 					printf("Unexpected token: %c\n", *temp_c2);
 				}
@@ -515,7 +513,6 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			} else if(next_token.type == LITERAL && next_token.sub_type == INTEGER){
 				if(next_token.int_value <= 0){
 					add_token(token_list, (token) {.type = OPERATOR, .sub_type = SUBTRACT}, token_index, token_length);
-					do_next_token = 0;
 				} else {
 					printf("Unexpected token: %c\n", *temp_c2);
 				}

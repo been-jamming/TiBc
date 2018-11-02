@@ -45,9 +45,9 @@ instruction *create_instruction(unsigned char opcode);
 
 void add_instruction(instruction **instructions, instruction *i);
 
-void translate_dereference(expression *expr, instruction **instructions, unsigned int *local_offset);
+void translate_dereference(expression *expr, block *func, instruction **instructions, unsigned int *local_offset);
 
-void translate_expression(expression *expr, instruction **instructions, unsigned int *local_offset);
+void translate_expression(expression *expr, block *func, instruction **instructions, unsigned int *local_offset);
 
 void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset);
 
