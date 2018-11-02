@@ -279,6 +279,58 @@ token get_token(char **c){
 				output.string_value = get_identifier(c);
 				return output;
 			}
+		} else if(**c == 'r'){
+			++*c;
+			if(**c == 'e'){
+				++*c;
+				if(**c == 't'){
+					++*c;
+					if(**c == 'u'){
+						++*c;
+						if(**c == 'r'){
+							++*c;
+							if(**c == 'n'){
+								++*c;
+								if(!is_alpha(**c) && **c != '_' && !is_digit(**c)){
+									output.type = KEYWORD;
+									output.sub_type = RETURN;
+									return output;
+								} else {
+									*c -= 6;
+									output.type = IDENTIFIER;
+									output.string_value = get_identifier(c);
+									return output;
+								}
+							} else {
+								*c -= 5;
+								output.type = IDENTIFIER;
+								output.string_value = get_identifier(c);
+								return output;
+							}
+						} else {
+							*c -= 4;
+							output.type = IDENTIFIER;
+							output.string_value = get_identifier(c);
+							return output;
+						}
+					} else {
+						*c -= 3;
+						output.type = IDENTIFIER;
+						output.string_value = get_identifier(c);
+						return output;
+					}
+				} else {
+					*c -= 2;
+					output.type = IDENTIFIER;
+					output.string_value = get_identifier(c);
+					return output;
+				}
+			} else {
+				--*c;
+				output.type = IDENTIFIER;
+				output.string_value = get_identifier(c);
+				return output;
+			}
 		} else if(**c == 'w'){
 			++*c;
 			if(**c == 'h'){
@@ -369,28 +421,30 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	skip_whitespace(c);
 	temp_c = *c;
 	current_token = get_token(c);
-	while(current_token.type != closing_token.type || current_token.sub_type != closing_token.sub_type){
+	while((current_token.type != closing_token.type || current_token.sub_type != closing_token.sub_type) && (current_token.type != CONTROL || current_token.sub_type != CLOSEPARENTHESES)){
 		if(current_token.type == LITERAL || current_token.type == IDENTIFIER){
-			printf("1");
 			add_token(token_list, current_token, token_index, token_length);
 			
 			temp_c2 = *c;
 			next_token = get_token(c);
-			printf("2");
 			
 			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
 				add_token(token_list, next_token, token_index, token_length);
-				while(*(*c - 1) != ')'){
-					parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+				skip_whitespace(c);
+				if(**c == ')'){
+					next_token = get_token(c);
+					add_token(token_list, next_token, token_index, token_length);
+				} else {
+					while(*(*c - 1) != ')'){
+						parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+					}
 				}
 				skip_whitespace(c);
-				printf("%c", **c);
 				temp_c2 = *c;
 				next_token = get_token(c);
 			}
-			printf("3");
 
-			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){
+			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type) && (next_token.type != CONTROL || next_token.sub_type != CLOSEPARENTHESES)){
 				printf("Expected operator instead of: %c\n", *temp_c2);
 				exit(1);
 			} else if(next_token.type == OPERATOR){
@@ -508,6 +562,10 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 				exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
+		} else if(current_token.sub_type == RETURN){
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = SEMICOLON});
 		}
 	} else {
 		*token_index = old_token_index;

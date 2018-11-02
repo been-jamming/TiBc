@@ -14,14 +14,13 @@
 #define DEREFSTACK 8
 #define REF 13
 #define DEREF 14
-#define BNZSTACK 15
-#define BNZ 16
+#define BZSTACK 15
+#define BZ 16
 #define SSP 17
 #define JMPSTACK 18
 #define JMP 19
 #define MOV 20
-#define POPOFFSET 21
-#define PUSHPC 22
+#define CONSTANT 21
 
 typedef struct instruction instruction;
 

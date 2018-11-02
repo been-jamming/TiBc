@@ -128,26 +128,26 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			current_expression->expr2->do_order = 0;
 		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES){
 			/*spooky*/
-			current_expression->parent = create_expression(RUNFUNCTION, 0);
-			current_expression->parent->expr2 = current_expression;
-			current_expression = current_expression->parent;
+			child = create_expression(RUNFUNCTION, 0);
+			current_expression->expr2->parent = child;
+			child->expr2 = current_expression->expr2;
+			current_expression->expr2 = child;
+			child->parent = current_expression;
+
 			++*token_list;
 			--*token_length;
 			if((*token_list)->type == CONTROL && (*token_list)->sub_type == CLOSEPARENTHESES){
 				arguments = (linked_list *) 0;
-				printf("no arguments!!!");
 			} else {
 				arguments = create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset));
 				new_argument = arguments;
-				printf("An argument!!");
 				while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
-					printf("hi");
 					++*token_list;
 					--*token_length;
 					add_linked_list(&new_argument, create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset)));
 				}
 			}
-			current_expression->func_arguments = arguments;
+			child->func_arguments = arguments;
 		}
 		
 		++*token_list;
@@ -255,6 +255,13 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 				--*token_length;
 				return output;
 			}
+		} else if((*token_list)->sub_type == RETURN){
+			++*token_list;
+			--*token_length;
+			output->expr = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
+			++*token_list;
+			--*token_length;
+			return output;
 		} else {
 			printf("Uknown keyword: %d\n", (int) (*token_list)->sub_type);
 		}

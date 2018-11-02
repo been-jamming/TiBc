@@ -1,13 +1,22 @@
 #include "translate.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 unsigned int instruction_length = 0;
 unsigned int instruction_lengths[] = {};
 unsigned int var_length;
 
+char var_temp[256];
+
 unsigned int current_address;
 dictionary current_global_space;
+
+instruction **global_instructions;
+
+unsigned int if_id = 0;
+unsigned int while_id = 0;
+unsigned int function_call_id = 0;
 
 instruction *create_instruction(unsigned char opcode){
 	instruction *output;
@@ -27,6 +36,9 @@ void translate_expression(expression *expr, instruction **instructions, unsigned
 	instruction *load_a;
 	instruction *operation;
 	linked_list *argument;
+	unsigned int call_id;
+	char *new_label;
+	unsigned int label_length;
 
 	if(expr->type == LITERAL){
 		load_a = create_instruction(PUSH);
@@ -37,7 +49,11 @@ void translate_expression(expression *expr, instruction **instructions, unsigned
 	} else if(expr->type == IDENTIFIER){
 		load_a = create_instruction(PUSH);
 		load_a->type1 = expr->var_pointer->type;
-		load_a->address1 = expr->var_pointer->offset + *local_offset;
+		if(load_a->type1 == LOCAL){
+			load_a->address1 = expr->var_pointer->offset + *local_offset;
+		} else if(load_a->type1 == GLOBAL){
+			load_a->name = expr->var_pointer->name;
+		}
 		add_instruction(instructions, load_a);
 		++*local_offset;
 	} else if(expr->type == OPERATOR){
@@ -52,26 +68,43 @@ void translate_expression(expression *expr, instruction **instructions, unsigned
 		}
 		add_instruction(instructions, operation);
 	} else if(expr->type == RUNFUNCTION){
-		operation = create_instruction(PUSHPC);
+		call_id = function_call_id;
+		function_call_id++;
+		operation = create_instruction(SSP);
+		operation->type1 = LITERAL;
+		operation->const_pointer = create_constant(INTEGER, 0);
+		operation->const_pointer->int_value = 1;
+		add_instruction(instructions, operation);
+		
+		operation = create_instruction(PUSH);
+		operation->type1 = GLOBAL;
+		
+		sprintf(var_temp, "__function_call%d", call_id);
+		label_length = strlen(var_temp);
+		new_label = malloc(sizeof(char)*(label_length + 1));
+		strcpy(new_label, var_temp);
+		operation->name = new_label;
+
 		add_instruction(instructions, operation);
 		argument = expr->func_arguments;
 		while(argument){
-			printf("argumentlalala\n");
 			translate_expression((expression *) argument->value, instructions, local_offset);
 			argument = argument->next;
 		}
-		printf("getting function pointer");
-		printf(" %d ", (int) expr->expr2);
 		translate_expression(expr->expr2, instructions, local_offset);
 		operation = create_instruction(JMPSTACK);
+		add_instruction(instructions, operation);
+		operation = create_instruction(LABEL);
+		operation->name = new_label;
 		add_instruction(instructions, operation);
 	} else {
 		printf("unrecognized expression %d\n", (int) expr->type);
 	}
 }
 
-void translate_statement(statement *s, instruction **instructions, unsigned int *local_offset){
+void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset){
 	instruction *ssp;
+	instruction *operation;
 
 	if(!s->type){
 		translate_expression(s->expr, instructions, local_offset);
@@ -81,37 +114,78 @@ void translate_statement(statement *s, instruction **instructions, unsigned int 
 		ssp->const_pointer->int_value = -1;
 		add_instruction(instructions, ssp);
 		--*local_offset;
+	} else if(s->type == KEYWORD && s->sub_type == RETURN){
+		translate_expression(s->expr, instructions, local_offset);
+		operation = create_instruction(POP);
+		operation->type1 = LOCAL;
+		operation->address1 = *(func->local_size) + 2;
+		add_instruction(instructions, operation);
+
+		operation = create_instruction(SSP);
+		operation->type1 = LITERAL;
+		operation->const_pointer = create_constant(INTEGER, 0);
+		operation->const_pointer->int_value = -*(func->local_size);
+		add_instruction(instructions, operation);
+
+		operation = create_instruction(JMPSTACK);
+		add_instruction(instructions, operation);
 	}
 }
 
-void translate_block(block *b, instruction **instructions, unsigned int *local_offset){
+void translate_block(block *b, block *func, instruction **instructions, unsigned int *local_offset){
 	linked_list *statements;
 	statements = b->statements;
 	while(statements->next){
 		statements = statements->next;
-		translate_statement((statement *) statements->value, instructions, local_offset);
+		translate_statement((statement *) statements->value, func, instructions, local_offset);
 	}
 }
 
 void translate_function(variable *var, instruction **instructions){
-	unsigned int *local_offset;
+	unsigned int local_offset;
 	instruction *ssp;
+	instruction *jmp_return;
 
 	if(var->is_function){
-		local_offset = malloc(sizeof(unsigned int));
-		*local_offset = 0;
+		local_offset = 0;
 		ssp = create_instruction(SSP);
 		ssp->type1 = LITERAL;
 		ssp->const_pointer = create_constant(INTEGER, 0);
-		ssp->const_pointer->int_value = *(var->function->local_size);
+		ssp->const_pointer->int_value = *(var->function->local_size) - var->function->num_args;
 		add_instruction(instructions, ssp);
-		translate_block(var->function, instructions, local_offset);
+		translate_block(var->function, var->function, instructions, &local_offset);
 		ssp = create_instruction(SSP);
 		ssp->type1 = LITERAL;
 		ssp->const_pointer = create_constant(INTEGER, 0);
 		ssp->const_pointer->int_value = -*(var->function->local_size);
 		add_instruction(instructions, ssp);
+
+		jmp_return = create_instruction(JMPSTACK);
+		add_instruction(instructions, jmp_return);
 	}
+}
+
+void _translate_program(void *void_var){
+	instruction *operation;
+	variable *var;
+	var = (variable *) void_var;
+	
+	operation = create_instruction(LABEL);
+	operation->name = var->name;
+	add_instruction(global_instructions, operation);
+	if(var->is_function){
+		translate_function(var, global_instructions);
+	} else {
+		operation = create_instruction(CONSTANT);
+		operation->const_pointer = create_constant(INTEGER, 0);
+		operation->const_pointer->int_value = 0;
+		add_instruction(global_instructions, operation);
+	}
+}
+
+void translate_program(dictionary global_space, instruction **instructions){
+	global_instructions = instructions;
+	iterate_dictionary(global_space, _translate_program);
 }
 
 void print_instructions(instruction *instructions){
@@ -126,6 +200,15 @@ void print_instructions(instruction *instructions){
 				}
 			} else if(instructions->type1 == LOCAL){
 				printf("from stack %d", instructions->address1);
+			} else if(instructions->type1 == GLOBAL){
+				printf("label: %s", instructions->name);
+			}
+		} else if(instructions->opcode == POP){
+			printf("POP ");
+			if(instructions->type1 == GLOBAL){
+				printf("to label: %s", instructions->name);
+			} else if(instructions->type1 == LOCAL){
+				printf("to stack %d", instructions->address1);
 			}
 		} else if(instructions->opcode == SSP){
 			printf("SSP ");
@@ -142,15 +225,17 @@ void print_instructions(instruction *instructions){
 			printf("MULSTACK");
 		} else if(instructions->opcode == JMPSTACK){
 			printf("JMPSTACK");
-		} else if(instructions->opcode == PUSHPC){
-			printf("PUSHPC");
+		} else if(instructions->opcode == LABEL){
+			printf("%s:", instructions->name);
+		} else if(instructions->opcode == CONSTANT){
+			printf("CONSTANT %d", instructions->const_pointer->int_value);
 		}
 		printf("\n");
 	}
 }
 
 int main(){
-	char *test_program = "var main(){var a; var b; main(0);}";
+	char *test_program = "var my_func(a){return a;} var main(){var a; main(a*a);}";
 	char **test_program_pointer;
 	token *token_list;
 	token **token_list_pointer;
@@ -178,7 +263,6 @@ int main(){
 	test_program_pointer = &test_program;
 	
 	parse_program(test_program_pointer, token_list_pointer, &token_index, &token_length);
-	printf("parsed");
 
 	expression *expr;
 	dictionary global_space;
@@ -195,8 +279,7 @@ int main(){
 	write_dictionary(&local_space, "ben", var_pointer, 0);
 
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
-	printf("compiled");
-	translate_function((variable *) read_dictionary(global_space, "main", 0), &instructions);
+	translate_program(global_space, &instructions);
 	print_instructions(original_instructions);
 	printf("Done!!!\n");
 	return 0;

@@ -63,6 +63,7 @@
 	#define ELSE 2
 	#define WHILE 3
 	#define VAR 4
+	#define RETURN 5
 
 //Unary operator
 
