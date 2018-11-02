@@ -35,12 +35,25 @@ struct instruction{
 		constant *const_pointer;
 		char *name;
 	};
-	unsigned int address2;
+	union{
+		unsigned int address2;
+		char *name2;
+	};
 };
 
 instruction *create_instruction(unsigned char opcode);
 
 void add_instruction(instruction **instructions, instruction *i);
 
+void translate_dereference(expression *expr, instruction **instructions, unsigned int *local_offset);
+
 void translate_expression(expression *expr, instruction **instructions, unsigned int *local_offset);
+
+void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset);
+
+void translate_block(block *b, block *func, instruction **instructions, unsigned int *local_offset);
+
+void translate_function(variable *var, instruction **instructions);
+
+void translate_program(dictionary global_space, instruction **instructions);
 

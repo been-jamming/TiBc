@@ -114,6 +114,11 @@ token get_token(char **c){
 		output.type = OPERATOR;
 		output.sub_type = DIVIDE;
 		return output;
+	} else if(**c == '&'){
+		++*c;
+		output.type = OPERATOR;
+		output.sub_type = AND;
+		return output;
 	} else if(**c == '='){
 		++*c;
 		if(**c == '='){
@@ -413,6 +418,7 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	token last_token;
 	token current_token;
 	token next_token;
+	unsigned char do_next_token = 1;
 
 	last_token.type = 0;
 	last_token.sub_type = 0;
@@ -452,6 +458,13 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			} else if((next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type) || (next_token.type == CONTROL && next_token.sub_type == CLOSEPARENTHESES)){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
+			} else if(next_token.type == LITERAL && next_token.sub_type == INTEGER){
+				if(next_token.int_value <= 0){
+					add_token(token_list, (token) {.type = OPERATOR, .sub_type = SUBTRACT}, token_index, token_length);
+					do_next_token = 0;
+				} else {
+					printf("Unexpected token: %c\n", *temp_c2);
+				}
 			} else {
 				printf("Unexpected token: %c\n", *temp_c2);
 				exit(1);
@@ -462,6 +475,22 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			temp_c2 = *c;
 			next_token = get_token(c);
 
+			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
+				add_token(token_list, next_token, token_index, token_length);
+				skip_whitespace(c);
+				if(**c == ')'){
+					next_token = get_token(c);
+					add_token(token_list, next_token, token_index, token_length);
+				} else {
+					while(*(*c - 1) != ')'){
+						parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+					}
+				}
+				skip_whitespace(c);
+				temp_c2 = *c;
+				next_token = get_token(c);
+			}
+			
 			if(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
 				temp_c2 = *c;
 				next_token = get_token(c);
@@ -483,6 +512,13 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
+			} else if(next_token.type == LITERAL && next_token.sub_type == INTEGER){
+				if(next_token.int_value <= 0){
+					add_token(token_list, (token) {.type = OPERATOR, .sub_type = SUBTRACT}, token_index, token_length);
+					do_next_token = 0;
+				} else {
+					printf("Unexpected token: %c\n", *temp_c2);
+				}
 			} else {
 				printf("Unexpected token: %c\n", *temp_c2);
 				exit(1);
@@ -506,8 +542,12 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			printf("\n");
 			exit(1);
 		}
-		temp_c = *c;
-		current_token = get_token(c);
+		if(do_next_token){
+			temp_c = *c;
+			current_token = get_token(c);
+		} else {
+			do_next_token = 1;
+		}
 	}
 }
 

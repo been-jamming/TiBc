@@ -112,15 +112,37 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 
 	while(((*token_list)->type != CONTROL || (*token_list)->sub_type == OPENPARENTHESES) && *token_length != 0){
 		if((*token_list)->type == IDENTIFIER){
-			current_expression->expr2 = variable_expression(global_space, local_space, (*token_list)->string_value);
-			current_expression->expr2->parent = current_expression;
+			child = current_expression;
+			while(child->expr2){
+				child = child->expr2;
+			}
+			child->expr2 = variable_expression(global_space, local_space, (*token_list)->string_value);
+			child->expr2->parent = child;
 		} else if((*token_list)->type == LITERAL){
-			current_expression->expr2 = literal_expression(**token_list, const_list, const_offset);
-			current_expression->expr2->parent = current_expression;
+			child = current_expression;
+			while(child->expr2){
+				child = child->expr2;
+			}
+			child->expr2 = literal_expression(**token_list, const_list, const_offset);
+			child->expr2->parent = child;
 		} else if((*token_list)->type == OPERATOR){
 			current_expression->parent = create_expression(OPERATOR, (*token_list)->sub_type);
 			current_expression->parent->expr1 = current_expression;
 			current_expression = current_expression->parent;
+		} else if((*token_list)->type == UNARY){
+			if(current_expression->type == OPERATOR){
+				child = create_expression(UNARY, (*token_list)->sub_type);
+				child->expr2 = current_expression->expr2;
+				if(child->expr2){
+					child->expr2->parent = child;
+				}
+				current_expression->expr2 = child;
+				child->parent = current_expression;
+			} else {
+				current_expression->parent = create_expression(UNARY, (*token_list)->sub_type);
+				current_expression->parent->expr1 = current_expression;
+				current_expression = current_expression->parent;
+			}
 		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES && !current_expression->expr2){
 			++*token_list;
 			--*token_length;
@@ -233,8 +255,7 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 					printf("Expected '{' token\n");
 					exit(1);
 				} else {
-					++*token_list;
-					--*token_length;
+					printf("first token after: %d %d\n", (int) (*token_list + 1)->type, (int) (*token_list + 1)->sub_type);
 					output->code = compile_block(global_space, local_space, token_list, token_length, const_list, const_offset, local_offset);
 					++*token_list;
 					--*token_length;
