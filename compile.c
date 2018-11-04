@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 dictionary global_namespace;
-unsigned const int operator_precedence[] = {0, 999, 3, 3, 2, 2, 1};
+unsigned const int operator_precedence[] = {0, 999, 3, 3, 2, 2, 999, 999, 999, 999, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 6, 1};
 
 variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	variable *output;

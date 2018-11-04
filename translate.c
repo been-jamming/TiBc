@@ -86,6 +86,21 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 			} else if(expr->sub_type == DIVIDE){
 				operation = create_instruction(DIVSTACK);
 				--*local_offset;
+			} else if(expr->sub_type == LESSTHAN){
+				operation = create_instruction(LTSTACK);
+				--*local_offset;
+			} else if(expr->sub_type == GREATERTHAN){
+				operation = create_instruction(GTSTACK);
+				--*local_offset;
+			} else if(expr->sub_type == EQUALS){
+				operation = create_instruction(EQSTACK);
+				--*local_offset;
+			} else if(expr->sub_type == OR){
+				operation = create_instruction(ORSTACK);
+				--*local_offset;
+			} else if(expr->sub_type == AND){
+				operation = create_instruction(ANDSTACK);
+				--*local_offset;
 			} else {
 				printf("Operation not implemented: %d\n", (int) expr->sub_type);
 				exit(1);
@@ -130,6 +145,18 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				add_instruction(instructions, operation);
 			}
 		}
+	} else if(expr->type == UNARY && expr->sub_type == NEGATE){
+		operation = create_instruction(PUSH);
+		operation->type1 = LITERAL;
+		operation->const_pointer = create_constant(INTEGER, 0);
+		operation->const_pointer->int_value = -1;
+		add_instruction(instructions, operation);
+		++*local_offset;
+
+		translate_expression(expr->expr2, func, instructions, local_offset);
+		operation = create_instruction(MULSTACK);
+		add_instruction(instructions, operation);
+		--*local_offset;
 	} else if(expr->type == UNARY && expr->sub_type == DEREFERENCE){
 		translate_dereference(expr, func, instructions, local_offset);
 	} else if(expr->type == UNARY && expr->sub_type == REFERENCE){
@@ -403,6 +430,16 @@ void print_instructions(instruction *instructions, FILE *foutput){
 			fprintf(foutput, "SUBSTACK");
 		} else if(instructions->opcode == DIVSTACK){
 			fprintf(foutput, "DIVSTACK");
+		} else if(instructions->opcode == ORSTACK){
+			fprintf(foutput, "ORSTACK");
+		} else if(instructions->opcode == ANDSTACK){
+			fprintf(foutput, "ANDSTACK");
+		} else if(instructions->opcode == LTSTACK){
+			fprintf(foutput, "LTSTACK");
+		} else if(instructions->opcode == GTSTACK){
+			fprintf(foutput, "GTSTACK");
+		} else if(instructions->opcode == EQSTACK){
+			fprintf(foutput, "EQSTACK");
 		} else if(instructions->opcode == JMPSTACK){
 			fprintf(foutput, "JMPSTACK");
 		} else if(instructions->opcode == DEREFSTACK){
@@ -447,14 +484,14 @@ int main(int argc, char **argv){
 		exit(1);
 	}
 
-	finput = fopen(input_name, "r");
+	finput = fopen(input_name, "rb");
 	fseek(finput, 0, SEEK_END);
 	program_length = ftell(finput);
 	fseek(finput, 0, SEEK_SET);
 	test_program = malloc(sizeof(char)*(program_length + 1));
-	test_program[program_length] = (char) 0;
 	fread(test_program, program_length, 1, finput);
 	fclose(finput);
+	test_program[program_length] = (char) 0;
 
 	instruction *instructions;
 	instruction *original_instructions;

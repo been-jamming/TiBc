@@ -21,6 +21,11 @@
 #define JMP 19
 #define MOV 20
 #define CONSTANT 21
+#define ORSTACK 22
+#define ANDSTACK 23
+#define LTSTACK 24
+#define GTSTACK 25
+#define EQSTACK 26
 
 typedef struct instruction instruction;
 

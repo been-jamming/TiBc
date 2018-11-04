@@ -39,7 +39,7 @@
 	#define BITOR 21
 	#define BITXOR 22
 	#define BITNOT 23
-	#define ELEMENT 6
+	#define ELEMENT 24
 
 //Control
 
@@ -73,6 +73,7 @@
 
 	#define DEREFERENCE 1
 	#define REFERENCE 2
+	#define NEGATE 3
 
 //Identifier
 
