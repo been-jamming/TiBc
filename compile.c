@@ -130,7 +130,7 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			current_expression->parent->expr1 = current_expression;
 			current_expression = current_expression->parent;
 		} else if((*token_list)->type == UNARY){
-			if(current_expression->type == OPERATOR){
+			if(1 || current_expression->type == OPERATOR){
 				child = create_expression(UNARY, (*token_list)->sub_type);
 				child->expr2 = current_expression->expr2;
 				if(child->expr2){
@@ -143,35 +143,43 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 				current_expression->parent->expr1 = current_expression;
 				current_expression = current_expression->parent;
 			}
-		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES && !current_expression->expr2){
-			++*token_list;
-			--*token_length;
-			current_expression->expr2 = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
-			current_expression->expr2->do_order = 0;
 		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES){
-			/*spooky*/
-			child = create_expression(RUNFUNCTION, 0);
-			current_expression->expr2->parent = child;
-			child->expr2 = current_expression->expr2;
-			current_expression->expr2 = child;
-			child->parent = current_expression;
+			child = current_expression;
+			while(child->expr2){
+				if(child->expr2->type != UNARY){
+					break;
+				}
+				child = child->expr2;
+			}
 
 			++*token_list;
 			--*token_length;
-			if((*token_list)->type == CONTROL && (*token_list)->sub_type == CLOSEPARENTHESES){
-				arguments = (linked_list *) 0;
+			if(!child->expr2){
+				child->expr2 = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
+				child->expr2->do_order = 0;
 			} else {
-				arguments = create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset));
-				new_argument = arguments;
-				while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
-					++*token_list;
-					--*token_length;
-					add_linked_list(&new_argument, create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset)));
+				/*spooky*/
+				child = create_expression(RUNFUNCTION, 0);
+				current_expression->expr2->parent = child;
+				child->expr2 = current_expression->expr2;
+				current_expression->expr2 = child;
+				child->parent = current_expression;
+
+				if((*token_list)->type == CONTROL && (*token_list)->sub_type == CLOSEPARENTHESES){
+					arguments = (linked_list *) 0;
+				} else {
+					arguments = create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset));
+					new_argument = arguments;
+					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
+						++*token_list;
+						--*token_length;
+						add_linked_list(&new_argument, create_linked_list(compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset)));
+					}
 				}
+				child->func_arguments = arguments;
 			}
-			child->func_arguments = arguments;
 		}
-		
+
 		++*token_list;
 		--*token_length;
 	}
