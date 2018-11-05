@@ -65,7 +65,7 @@ is the same as
 ```
 This will most likely be changed in future versions.
 #### Example Code
-A few examples are in the `Examples` folder
+A few examples are in the `examples` folder
 
 *factorial*
 ```
