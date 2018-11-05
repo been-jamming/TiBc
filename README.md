@@ -54,6 +54,7 @@ The language TiBc compiles currently is an extremely simple and B-like.
   * if you desperately need the not `!` operator, you can implement it as a function. This will be added ASAP.
 * Comparison operators:```< > ==```
 * Referencing operators:```* &```
+
 The language specifies standard C order of operations except for the fact that a value/variable is always referenced/dereferenced before it is executed as a function. For example
 ```
 *my_var(a, b, c)
