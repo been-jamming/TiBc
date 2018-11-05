@@ -391,7 +391,6 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	char **orig_c;
 	char *temp_c;
 	char *temp_c2;
-	token last_token;
 	token current_token;
 	token next_token;
 	unsigned char do_next_token = 1;
@@ -605,7 +604,7 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 		skip_whitespace(c);
 		current_token = get_token(c);
 		if(current_token.type != IDENTIFIER){
-			printf("Expected identifier\n", (int) current_token.type, (int) current_token.sub_type);
+			printf("Expected identifier\n");
 			exit(1);
 		}
 		add_token(token_list, current_token, token_index, token_length);
@@ -617,7 +616,7 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 			current_token = get_token(c);
 			while(**c && (current_token.type != CONTROL || current_token.sub_type != CLOSEPARENTHESES)){
 				if(current_token.type != IDENTIFIER){
-					printf("Expected identifier\n", (int) current_token.type, (int) current_token.sub_type);
+					printf("Expected identifier\n");
 					exit(1);
 				}
 				add_token(token_list, current_token, token_index, token_length);

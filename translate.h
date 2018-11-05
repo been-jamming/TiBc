@@ -1,3 +1,5 @@
+#ifndef INCLUDE_TRANSLATE
+#define INCLUDE_TRANSLATE
 #include "parse.h"
 #include "compile.h"
 
@@ -26,6 +28,7 @@
 #define LTSTACK 24
 #define GTSTACK 25
 #define EQSTACK 26
+#define BNZSTACK 27
 
 typedef struct instruction instruction;
 
@@ -61,4 +64,4 @@ void translate_block(block *b, block *func, instruction **instructions, unsigned
 void translate_function(variable *var, instruction **instructions);
 
 void translate_program(dictionary global_space, instruction **instructions);
-
+#endif

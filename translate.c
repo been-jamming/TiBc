@@ -299,7 +299,7 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 		translate_block(s->code, func, instructions, local_offset);
 
 		translate_expression(s->expr, func, instructions, local_offset);
-		operation = create_instruction(BZSTACK);
+		operation = create_instruction(BNZSTACK);
 		operation->type1 = GLOBAL;
 		operation->name = new_label2;
 		operation->next2 = start_block;
@@ -413,9 +413,14 @@ void print_instructions(instruction *instructions, FILE *foutput){
 			if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "to label %s", instructions->name);
 			}
+		} else if(instructions->opcode == BNZSTACK){
+			fprintf(foutput, "BNZSTACK ");
+			if(instructions->type1 == GLOBAL){
+				fprintf(foutput, "to label %s", instructions->name);
+			}
 		} else if(instructions->opcode == SSP){
 			fprintf(foutput, "SSP ");
-			if(instructions->type1 = LITERAL){
+			if(instructions->type1 == LITERAL){
 				if(instructions->const_pointer->type == INTEGER){
 					fprintf(foutput, "%d", instructions->const_pointer->int_value);
 				}
@@ -500,8 +505,6 @@ int main(int argc, char **argv){
 
 	const_list = create_linked_list((void *) 0);
 
-	block *hi;
-
 	token_list = calloc(10, sizeof(token));
 	token_list_pointer = &token_list;
 	token_length = 10;
@@ -511,7 +514,6 @@ int main(int argc, char **argv){
 	test_program_pointer = &test_program;
 	
 	parse_program(test_program_pointer, token_list_pointer, &token_index, &token_length);
-	expression *expr;
 	dictionary global_space;
 	dictionary local_space;
 	variable *var_pointer;

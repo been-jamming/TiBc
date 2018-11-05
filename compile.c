@@ -292,6 +292,7 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 			return output;
 		} else {
 			printf("Uknown keyword: %d\n", (int) (*token_list)->sub_type);
+			exit(1);
 		}
 	} else {
 		output->expr = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
@@ -351,7 +352,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					while((*token_list)->type != CONTROL || (*token_list)->sub_type != CLOSEPARENTHESES){
 						num_args++;
 						if((*token_list)->type != IDENTIFIER){
-							printf("Expected identifier\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
+							printf("Expected identifier\n");
 							exit(1);
 						} else {
 							local_var_pointer = create_variable(LOCAL, *local_offset, (*token_list)->string_value);
@@ -370,7 +371,7 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					++*token_list;
 					--*token_length;
 					if((*token_list)->type != CONTROL || (*token_list)->sub_type != OPENBRACES){
-						printf("Expected '{' token\n", (int) (*token_list)->type, (int) (*token_list)->sub_type);
+						printf("Expected '{' token\n");
 						exit(1);
 					} else {
 						var_pointer->function = compile_block(global_space, new_local_space, token_list, token_length, const_list, const_offset, local_offset);
