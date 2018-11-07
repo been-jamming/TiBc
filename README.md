@@ -65,7 +65,7 @@ is the same as
 ```
 This will most likely be changed in future versions.
 #### Example Code
-A few examples are in the `Examples` folder
+A few examples are in the `examples` folder
 
 *factorial*
 ```
@@ -130,3 +130,5 @@ Stack relative references are with respect to the width of the architectures nat
 * Allocate variables to registers
 * Output \_nostub executables which run on Ti89 and Ti92 calculators
 * Get the compiler to run on the calculator itself with a text editor to make it a native compiler.
+
+Special thanks to Bisqwit for showing that making a compiler isn't impossible at all.
