@@ -54,15 +54,7 @@ The language TiBc compiles currently is an extremely simple and B-like.
 * Comparison operators:```< > == !=```
 * Referencing operators:```* &```
 
-The language specifies standard C order of operations except for the fact that a value/variable is always referenced/dereferenced before it is executed as a function. For example
-```
-*my_var(a, b, c)
-```
-is the same as
-```
-(*my_var)(a, b, c)
-```
-This will most likely be changed in future versions.
+The language specifies standard C order of operations.
 #### Example Code
 A few examples are in the `examples` folder
 
