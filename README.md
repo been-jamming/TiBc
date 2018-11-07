@@ -129,7 +129,6 @@ Stack relative references are with respect to the width of the architectures nat
   * Defines an in-place constant in memory
 
 ### To Do
-* Implement the '!' operation (honestly should have already been done)
 * Simple optimization
 * Allocate variables to registers
 * Output \_nostub executables which run on Ti89 and Ti92 calculators
