@@ -50,8 +50,7 @@ The language TiBc compiles currently is an extremely simple and B-like.
   * Example: `var my_function(a, b){var output; ... return output;}`
 #### Currently Supported Operators
 * Arithmetic operators:```+ - * /```
-* Logical operators:```& |```
-  * if you desperately need the not `!` operator, you can implement it as a function. This will be added ASAP.
+* Logical operators:```& | !```
 * Comparison operators:```< > ==```
 * Referencing operators:```* &```
 
