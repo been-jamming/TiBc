@@ -104,6 +104,7 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 	expression *root;
 	expression *current_expression;
 	expression *child;
+	expression *unary;
 	linked_list *arguments;
 	linked_list *new_argument;
 
@@ -130,19 +131,14 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			current_expression->parent->expr1 = current_expression;
 			current_expression = current_expression->parent;
 		} else if((*token_list)->type == UNARY){
-			if(1 || current_expression->type == OPERATOR){
-				child = create_expression(UNARY, (*token_list)->sub_type);
-				child->expr2 = current_expression->expr2;
-				if(child->expr2){
-					child->expr2->parent = child;
-				}
-				current_expression->expr2 = child;
-				child->parent = current_expression;
-			} else {
-				current_expression->parent = create_expression(UNARY, (*token_list)->sub_type);
-				current_expression->parent->expr1 = current_expression;
-				current_expression = current_expression->parent;
+			child = current_expression;
+			while(child->expr2){
+				child = child->expr2;
 			}
+
+			unary = create_expression(UNARY, (*token_list)->sub_type);
+			child->expr2 = unary;
+			unary->parent = child;
 		} else if((*token_list)->type == CONTROL && (*token_list)->sub_type == OPENPARENTHESES){
 			child = current_expression;
 			while(child->expr2){

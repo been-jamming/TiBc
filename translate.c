@@ -95,6 +95,9 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 			} else if(expr->sub_type == EQUALS){
 				operation = create_instruction(EQSTACK);
 				--*local_offset;
+			} else if(expr->sub_type == NOTEQUALS){
+				operation = create_instruction(NEQSTACK);
+				--*local_offset;
 			} else if(expr->sub_type == OR){
 				operation = create_instruction(ORSTACK);
 				--*local_offset;
@@ -130,7 +133,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					exit(1);
 				}
 				translate_expression(expr->expr2, func, instructions, local_offset);
-				translate_dereference(expr->expr1->expr2, func, instructions, local_offset);
+				translate_expression(expr->expr1->expr2, func, instructions, local_offset);
 				operation = create_instruction(MOV);
 				operation->type1 = LOCAL;
 				operation->address1 = 1;
@@ -158,7 +161,14 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		add_instruction(instructions, operation);
 		--*local_offset;
 	} else if(expr->type == UNARY && expr->sub_type == DEREFERENCE){
-		translate_dereference(expr, func, instructions, local_offset);
+		//translate_dereference(expr, func, instructions, local_offset);
+		translate_expression(expr->expr2, func, instructions, local_offset);
+		operation = create_instruction(DEREFSTACK);
+		add_instruction(instructions, operation);
+	} else if(expr->type == UNARY && expr->sub_type == NOT){
+		translate_expression(expr->expr2, func, instructions, local_offset);
+		operation = create_instruction(NOTSTACK);
+		add_instruction(instructions, operation);
 	} else if(expr->type == UNARY && expr->sub_type == REFERENCE){
 		if(expr->expr2){
 			if(expr->expr2->type == IDENTIFIER){
@@ -420,7 +430,7 @@ void print_instructions(instruction *instructions, FILE *foutput){
 			}
 		} else if(instructions->opcode == SSP){
 			fprintf(foutput, "SSP ");
-			if(instructions->type1 == LITERAL){
+			if(instructions->type1 = LITERAL){
 				if(instructions->const_pointer->type == INTEGER){
 					fprintf(foutput, "%d", instructions->const_pointer->int_value);
 				}
@@ -445,6 +455,10 @@ void print_instructions(instruction *instructions, FILE *foutput){
 			fprintf(foutput, "GTSTACK");
 		} else if(instructions->opcode == EQSTACK){
 			fprintf(foutput, "EQSTACK");
+		} else if(instructions->opcode == NEQSTACK){
+			fprintf(foutput, "NEQSTACK");
+		} else if(instructions->opcode == NOTSTACK){
+			fprintf(foutput, "NOTSTACK");
 		} else if(instructions->opcode == JMPSTACK){
 			fprintf(foutput, "JMPSTACK");
 		} else if(instructions->opcode == DEREFSTACK){

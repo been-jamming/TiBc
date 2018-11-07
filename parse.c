@@ -123,6 +123,16 @@ token get_token(char **c){
 		++*c;
 		output.type = OPERATOR;
 		output.sub_type = OR;
+	} else if(**c == '!'){
+		++*c;
+		if(**c == '='){
+			++*c;
+			output.type = OPERATOR;
+			output.sub_type = NOTEQUALS;
+		} else {
+			output.type = UNARY;
+			output.sub_type = NOT;
+		}
 	} else if(**c == '<'){
 		++*c;
 		output.type = OPERATOR;

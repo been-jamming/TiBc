@@ -34,12 +34,12 @@
 	#define AND 16
 	#define OR 17
 	#define XOR 18
-	#define NOT 19
-	#define BITAND 20
-	#define BITOR 21
-	#define BITXOR 22
-	#define BITNOT 23
-	#define ELEMENT 24
+	#define BITAND 19
+	#define BITOR 20
+	#define BITXOR 21
+	#define BITNOT 22
+	#define ELEMENT 23
+	#define NOTEQUALS 24
 
 //Control
 
@@ -74,6 +74,7 @@
 	#define DEREFERENCE 1
 	#define REFERENCE 2
 	#define NEGATE 3
+	#define NOT 4
 
 //Identifier
 

@@ -29,6 +29,8 @@
 #define GTSTACK 25
 #define EQSTACK 26
 #define BNZSTACK 27
+#define NEQSTACK 28
+#define NOTSTACK 29
 
 typedef struct instruction instruction;
 
