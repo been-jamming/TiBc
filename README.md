@@ -83,7 +83,7 @@ TiBc currently outputs pseudo-assembly for a stack machine.
 
 Places on the stack are referenced relative to the current location of the stack pointer. Positive references are where the stack is going, and negative references on the stack refer to previous values pushed onto the stack. The references assume that the stack pointer is incremented first before writing the value when pushing to the stack. This, however, can be easily changed for a different architecture.
 
-Stack relative references are with respect to the width of the architectures native word (or possibly a different width). On the Ti89, each integer will be 
+Stack relative references are with respect to the width of the architectures native word (or possibly a different width). On the Ti89, each integer is 2 bytes, so `SSP -1` would actually decrement the stack pointer by 2 bytes, not one.
 
 *opcodes*
 * PUSH
@@ -110,12 +110,16 @@ Stack relative references are with respect to the width of the architectures nat
   * Pops the last two values on the stack and pushes the result of a bitwise or between the two.
 * ANDSTACK
   * Pops the last two values on the stack and pushes the result of a bitwise and between the two.
+* NOTSTACK
+  * Pops the last value on the stack and pushes the result of a logical not of the value.
 * LTSTACK
   * Pops the last two values on the stack and pushes `1` if the first was less than the second, otherwise it pushes `0`
 * GTSTACK
   * Pops the last two values on the stack and pushes `1` if the first was greater than the second, otherwise it pushes `0`
 * EQSTACK
   * Pops the last two values on the stack and pushes `1` if the first was equal to the second, otherwise it pushes `0`
+* NEQSTACK
+  * Pops the last two values on the stack and pushes `0` if the first was equal to the second, otherwise it pushes `1`
 * JMPSTACK
   * Pops the last value on the stack and jumps th that address.
   * Program labels, memory addresses, and integers are all expected to have the same bit-width.
