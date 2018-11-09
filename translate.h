@@ -67,3 +67,4 @@ void translate_function(variable *var, instruction **instructions);
 
 void translate_program(dictionary global_space, instruction **instructions);
 #endif
+

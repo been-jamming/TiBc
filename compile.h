@@ -1,3 +1,5 @@
+#ifndef INCLUDE_COMPILE
+#define INCLUDE_COMPILE
 #include "linked_list.h"
 #include "dictionary.h"
 
@@ -5,7 +7,8 @@
 #define GLOBAL 9
 #define LOCALINDIRECT 10
 #define GLOBALINDIRECT 11
-#define STACKRELATIVE 12
+#define REGISTER 12
+#define REGISTERINDIRECT 13
 
 typedef struct block block;
 
@@ -24,6 +27,7 @@ struct variable{
 	unsigned int offset;
 	char *name;
 	block *function;
+	unsigned int reg;
 };
 
 typedef struct constant constant;
@@ -52,6 +56,7 @@ struct expression{
 	constant *const_pointer;
 	linked_list *func_arguments;
 	expression *parent;
+	unsigned int reg;
 };
 
 typedef struct statement statement;
@@ -89,4 +94,5 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 block *compile_block(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset);
 
 void compile_program(dictionary *global_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset);
+#endif
 

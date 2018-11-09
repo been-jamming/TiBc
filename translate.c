@@ -44,7 +44,7 @@ void translate_dereference(expression *expr, block *func, instruction **instruct
 	}
 }
 
-void translate_expression(expression *expr, block *func, instruction **instructions, unsigned int *local_offset){
+void translate_expression(expression *expr, block *func, instruction **instructions, unsigned int *local_offset, reg_list *regs, unsigned char to_stack){
 	instruction *load_a;
 	instruction *operation;
 	instruction *jmp_instruction;
@@ -53,27 +53,60 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 	char *new_label;
 	unsigned int label_length;
 	unsigned int num_args;
+	unsigned int reg;
 
 	if(expr->type == LITERAL){
-		load_a = create_instruction(PUSH);
-		load_a->type1 = LITERAL;
-		load_a->const_pointer = expr->const_pointer;
-		add_instruction(instructions, load_a);
-		++*local_offset;
+		if(!to_stack){
+			reg = allocate_register(regs);
+		} else {
+			reg = 0;
+		}
+
+		if(reg){
+			load_a = create_instruction(MOV);
+			load_a->type1 = LITERAL;
+			load_a->const_pointer = expr->const_pointer;
+			load_a->type2 = REGISTER;
+			load_a->address2 = reg;
+		} else {
+			load_a = create_instruction(PUSH);
+			load_a->type1 = LITERAL;
+			load_a->const_pointer = expr->const_pointer;
+			add_instruction(instructions, load_a);
+			++*local_offset;
+		}
 	} else if(expr->type == IDENTIFIER){
-		load_a = create_instruction(PUSH);
+		if(!to_stack){
+			reg = allocate_register(regs);
+		} else {
+			reg = 0;
+		}
+
+		if(reg){
+			load_a = create_instruction(MOV);
+		} else {
+			load_a = create_instruction(PUSH);
+		}
+
 		load_a->type1 = expr->var_pointer->type;
 		if(load_a->type1 == LOCAL){
 			load_a->address1 = *(func->local_size) - expr->var_pointer->offset + *local_offset - 1;
 		} else if(load_a->type1 == GLOBAL){
 			load_a->name = expr->var_pointer->name;
 		}
+
+		if(reg){
+			load_a->type2 = REGISTER;
+			load_a->address2 = reg;
+		}
 		add_instruction(instructions, load_a);
-		++*local_offset;
+		if(!reg){
+			++*local_offset;
+		}
 	} else if(expr->type == OPERATOR){
 		if(expr->sub_type != ASSIGN){
-			translate_expression(expr->expr1, func, instructions, local_offset);
-			translate_expression(expr->expr2, func, instructions, local_offset);
+			translate_expression(expr->expr1, func, instructions, local_offset, reg_list, 0);
+			translate_expression(expr->expr2, func, instructions, local_offset, reg_list, 0);
 			if(expr->sub_type == ADD){
 				operation = create_instruction(ADDSTACK);
 				--*local_offset;
@@ -161,7 +194,6 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		add_instruction(instructions, operation);
 		--*local_offset;
 	} else if(expr->type == UNARY && expr->sub_type == DEREFERENCE){
-		//translate_dereference(expr, func, instructions, local_offset);
 		translate_expression(expr->expr2, func, instructions, local_offset);
 		operation = create_instruction(DEREFSTACK);
 		add_instruction(instructions, operation);

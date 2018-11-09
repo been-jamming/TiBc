@@ -1,5 +1,6 @@
 #include "parse.h"
 #include "compile.h"
+#include "allocate.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -45,6 +46,7 @@ expression *create_expression(unsigned char type, unsigned char sub_type){
 	output->expr2 = (expression *) 0;
 	output->do_order = 1;
 	output->parent = (expression *) 0;
+	output->reg = 0;
 	return output;
 }
 
