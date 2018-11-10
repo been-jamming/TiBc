@@ -2,6 +2,7 @@
 #define INCLUDE_TRANSLATE
 #include "parse.h"
 #include "compile.h"
+#include "allocate.h"
 
 //Instructions
 
@@ -31,6 +32,20 @@
 #define BNZSTACK 27
 #define NEQSTACK 28
 #define NOTSTACK 29
+#define ADDOP 30
+#define MULOP 31
+#define SUBOP 32
+#define DIVOP 33
+#define LTOP 34
+#define GTOP 35
+#define EQOP 36
+#define NEQOP 37
+#define OROP 38
+#define ANDOP 39
+#define NEG 40
+#define BZOP 41
+#define BNZOP 42
+#define NOTOP 43
 
 typedef struct instruction instruction;
 
@@ -57,14 +72,14 @@ void add_instruction(instruction **instructions, instruction *i);
 
 void translate_dereference(expression *expr, block *func, instruction **instructions, unsigned int *local_offset);
 
-void translate_expression(expression *expr, block *func, instruction **instructions, unsigned int *local_offset);
+void translate_expression(expression *expr, block *func, instruction **instructions, unsigned int *local_offset, reg_list *regs, unsigned char to_stack);
 
-void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset);
+void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset, reg_list *regs);
 
-void translate_block(block *b, block *func, instruction **instructions, unsigned int *local_offset);
+void translate_block(block *b, block *func, instruction **instructions, unsigned int *local_offset, reg_list *regs);
 
-void translate_function(variable *var, instruction **instructions);
+void translate_function(variable *var, instruction **instructions, reg_list *regs);
 
-void translate_program(dictionary global_space, instruction **instructions);
+void translate_program(dictionary global_space, instruction **instructions, reg_list *regs);
 #endif
 

@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -O3
 
 default: linked_list.o dictionary.o parse.o compile.o translate.o allocate.o
-	$(CC) $(CFLAGS) linked_list.o dictionary.o parse.o compile.o translate.o -o TiBc
+	$(CC) $(CFLAGS) linked_list.o dictionary.o parse.o compile.o translate.o allocate.o -o TiBc
 
 linked_list.o: linked_list.c linked_list.h
 	$(CC) $(CFLAGS) -c linked_list.c

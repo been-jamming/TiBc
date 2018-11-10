@@ -2,6 +2,7 @@
 #define INCLUDE_COMPILE
 #include "linked_list.h"
 #include "dictionary.h"
+#include "parse.h"
 
 #define LOCAL 8
 #define GLOBAL 9
@@ -9,6 +10,7 @@
 #define GLOBALINDIRECT 11
 #define REGISTER 12
 #define REGISTERINDIRECT 13
+#define STACKRELATIVE 14
 
 typedef struct block block;
 
