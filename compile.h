@@ -59,6 +59,7 @@ struct expression{
 	linked_list *func_arguments;
 	expression *parent;
 	unsigned int reg;
+	unsigned char to_stack;
 };
 
 typedef struct statement statement;
@@ -86,6 +87,8 @@ expression *create_expression(unsigned char type, unsigned char sub_type);
 expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
 
 expression *literal_expression(token t, linked_list **const_list, unsigned int *const_offset);
+
+void to_stack_expression(expression *expr);
 
 void order_expression(expression **expr);
 

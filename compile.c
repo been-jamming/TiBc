@@ -47,6 +47,7 @@ expression *create_expression(unsigned char type, unsigned char sub_type){
 	output->do_order = 1;
 	output->parent = (expression *) 0;
 	output->reg = 0;
+	output->to_stack = 0;
 	return output;
 }
 
@@ -158,6 +159,7 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			} else {
 				/*spooky*/
 				child = create_expression(RUNFUNCTION, 0);
+				child->to_stack = 1;
 				current_expression->expr2->parent = child;
 				child->expr2 = current_expression->expr2;
 				current_expression->expr2 = child;
@@ -188,8 +190,37 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 	}
 	free(root);
 	order_expression(&current_expression);
+	to_stack_expression(current_expression);
 
 	return current_expression;
+}
+
+void to_stack_expression(expression *expr){
+	if(!expr){
+		return;
+	}
+
+	if(!expr->do_order){
+		return;
+	}
+
+	to_stack_expression(expr->expr1);
+	to_stack_expression(expr->expr2);
+
+	if(expr->type == RUNFUNCTION){
+		expr->to_stack = 1;
+	}
+	
+	if(expr->expr1){
+		if(expr->expr1->to_stack){
+			expr->to_stack = 1;
+		}
+	}
+	if(expr->expr2){
+		if(expr->expr2->to_stack){
+			expr->to_stack = 1;
+		}
+	}
 }
 
 void order_expression(expression **expr){

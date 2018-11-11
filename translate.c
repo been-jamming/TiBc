@@ -43,7 +43,11 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 	unsigned int label_length;
 	unsigned int num_args;
 	unsigned int reg;
-	
+
+	if(expr->to_stack){
+		to_stack = 1;
+	}
+
 	if(expr->type == LITERAL){
 		if(!to_stack){
 			reg = allocate_register(regs);
@@ -159,7 +163,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		} else {
 			if(expr->expr1->type == IDENTIFIER){
 				if(expr->expr1->var_pointer->type == LOCAL){
-					translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+					translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 					operation = create_instruction(MOV);
 					if(!expr->expr2->reg){
 						operation->type1 = LOCAL;
@@ -174,7 +178,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					operation->address2 = *(func->local_size) - expr->expr1->var_pointer->offset + *local_offset - 1;
 					add_instruction(instructions, operation);
 				} else if(expr->expr1->var_pointer->type == GLOBAL){
-					translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+					translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 					operation = create_instruction(MOV);
 					if(!expr->expr2->reg){
 						operation->type1 = LOCAL;
@@ -194,7 +198,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					printf("Unexpected unary operator %d\n", expr->expr1->sub_type);
 					exit(1);
 				}
-				translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+				translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 				translate_expression(expr->expr1->expr2, func, instructions, local_offset, regs, 0);
 				expr->expr1->reg = expr->expr1->expr2->reg;
 				operation = create_instruction(MOV);
@@ -235,7 +239,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 			}
 		}
 	} else if(expr->type == UNARY && expr->sub_type == NEGATE){
-		translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+		translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 		operation = create_instruction(NEG);
 		if(!expr->expr2->reg){
 			operation->type1 = LOCAL;
@@ -249,7 +253,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 
 		add_instruction(instructions, operation);
 	} else if(expr->type == UNARY && expr->sub_type == DEREFERENCE){
-		translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+		translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 		operation = create_instruction(DEREF);
 		if(!expr->expr2->reg){
 			operation->type1 = LOCAL;
@@ -263,7 +267,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 
 		add_instruction(instructions, operation);
 	} else if(expr->type == UNARY && expr->sub_type == NOT){
-		translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
+		translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
 		operation = create_instruction(NOTOP);
 		if(!expr->expr2->reg){
 			operation->type1 = LOCAL;
@@ -280,7 +284,12 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		if(expr->expr2){
 			if(expr->expr2->type == IDENTIFIER){
 				if(expr->expr2->var_pointer->type == LOCAL){
-					expr->reg = allocate_register(regs);
+					if(!to_stack){
+						expr->reg = allocate_register(regs);
+					} else {
+						expr->reg = 0;
+					}
+
 					if(!expr->reg){
 						operation = create_instruction(PUSH);
 						operation->type1 = STACKRELATIVE;
@@ -296,7 +305,12 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 
 					add_instruction(instructions, operation);
 				} else if(expr->expr2->var_pointer->type == GLOBAL){
-					expr->reg = allocate_register(regs);
+					if(!to_stack){
+						expr->reg = allocate_register(regs);
+					} else {
+						expr->reg = 0;
+					}
+
 					if(!expr->reg){
 						operation = create_instruction(PUSH);
 						operation->type1 = GLOBAL;
