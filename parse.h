@@ -1,3 +1,5 @@
+#ifndef INCLUDE_PARSE
+#define INCLUDE_PARSE
 //Tokens
 
 //Literals
@@ -121,4 +123,5 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 void parse_block(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 
 void parse_program(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
+#endif
 

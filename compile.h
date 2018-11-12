@@ -1,11 +1,16 @@
+#ifndef INCLUDE_COMPILE
+#define INCLUDE_COMPILE
 #include "linked_list.h"
 #include "dictionary.h"
+#include "parse.h"
 
 #define LOCAL 8
 #define GLOBAL 9
 #define LOCALINDIRECT 10
 #define GLOBALINDIRECT 11
-#define STACKRELATIVE 12
+#define REGISTER 12
+#define REGISTERINDIRECT 13
+#define STACKRELATIVE 14
 
 typedef struct block block;
 
@@ -24,6 +29,7 @@ struct variable{
 	unsigned int offset;
 	char *name;
 	block *function;
+	unsigned int reg;
 };
 
 typedef struct constant constant;
@@ -52,6 +58,8 @@ struct expression{
 	constant *const_pointer;
 	linked_list *func_arguments;
 	expression *parent;
+	unsigned int reg;
+	unsigned char to_stack;
 };
 
 typedef struct statement statement;
@@ -70,15 +78,27 @@ struct statement{
 
 constant *create_constant(unsigned char type, unsigned int offset);
 
+void free_constant(constant *c);
+
 variable *create_variable(unsigned char type, unsigned int offset, char *name);
+
+void free_variable(variable *var);
 
 block *create_block(dictionary *variables, unsigned int *local_size);
 
+void free_block(block *b);
+
 expression *create_expression(unsigned char type, unsigned char sub_type);
+
+statement *create_statement(unsigned char type, unsigned char sub_type);
+
+void free_statement(statement *s);
 
 expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
 
 expression *literal_expression(token t, linked_list **const_list, unsigned int *const_offset);
+
+void to_stack_expression(expression *expr);
 
 void order_expression(expression **expr);
 
@@ -89,4 +109,5 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 block *compile_block(dictionary *global_space, dictionary *local_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset, unsigned int *local_offset);
 
 void compile_program(dictionary *global_space, token **token_list, unsigned int *token_length, linked_list **const_list, unsigned int *const_offset);
+#endif
 
