@@ -9,6 +9,26 @@ dictionary create_dictionary(void *value){
 	return output;
 }
 
+void _free_dictionary(dictionary *dict, void (*free_value)(void *)){
+	unsigned char i;
+
+	for(i = 0; i < 8; i++){
+		_free_dictionary(dict->next_chars[i], free_value);
+	}
+
+	free_value(dict->value);
+}
+
+void free_dictionary(dictionary dict, void (*free_value)(void *)){
+	unsigned char i;
+
+	for(i = 0; i < 8; i++){
+		_free_dictionary(dict.next_chars[i], free_value);
+	}
+
+	free_value(dict.value);
+}
+
 void *read_dictionary(dictionary dict, char *string, unsigned char offset){
 	unsigned char zeros = 0;
 	unsigned char c;
@@ -90,15 +110,3 @@ void iterate_dictionary(dictionary dict, void (*func)(void *)){
 	}
 }
 
-/*
-int main(){
-	dictionary test_dictionary;
-	test_dictionary = create_dictionary((void *) 0);
-	printf("%d\n", (int) read_dictionary(test_dictionary, "ben", 0));
-	write_dictionary(&test_dictionary, "ben", (void *) 221, 0);
-	write_dictionary(&test_dictionary, "bey", (void *) 222, 0);
-	printf("%d ", (int) read_dictionary(test_dictionary, "ben", 0));
-
-	printf("%d\n", (int) read_dictionary(test_dictionary, "bey", 0));
-	return 0;
-}*/

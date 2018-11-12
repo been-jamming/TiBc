@@ -78,11 +78,21 @@ struct statement{
 
 constant *create_constant(unsigned char type, unsigned int offset);
 
+void free_constant(constant *c);
+
 variable *create_variable(unsigned char type, unsigned int offset, char *name);
+
+void free_variable(variable *var);
 
 block *create_block(dictionary *variables, unsigned int *local_size);
 
+void free_block(block *b);
+
 expression *create_expression(unsigned char type, unsigned char sub_type);
+
+statement *create_statement(unsigned char type, unsigned char sub_type);
+
+void free_statement(statement *s);
 
 expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
 

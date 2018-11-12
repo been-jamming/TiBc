@@ -18,6 +18,11 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	return output;
 }
 
+void free_variable(variable *var){
+	free(var->name);
+	free(var);
+}
+
 constant *create_constant(unsigned char type, unsigned int offset){
 	constant *output;
 	output = malloc(sizeof(constant));
@@ -25,6 +30,14 @@ constant *create_constant(unsigned char type, unsigned int offset){
 	output->offset = offset;
 
 	return output;
+}
+
+void free_constant(constant *c){
+	if(c->type == STRING){
+		free(c->string_value);
+	}
+
+	free(c);
 }
 
 block *create_block(dictionary *variables, unsigned int *local_size){
@@ -35,6 +48,16 @@ block *create_block(dictionary *variables, unsigned int *local_size){
 	output->local_size = local_size;
 
 	return output;
+}
+
+void free_block(block *b){
+	while(b->statements){
+		//free_statement(b->statements->value);
+		b->statements = b->statements->next;
+		free(b->statements->previous);
+	}
+
+	free(b);
 }
 
 expression *create_expression(unsigned char type, unsigned char sub_type){

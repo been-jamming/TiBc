@@ -7,6 +7,8 @@ struct dictionary{
 
 dictionary create_dictionary(void *value);
 
+void free_dictionary(dictionary dict, void (*free_value)(void *));
+
 void *read_dictionary(dictionary dict, char *string, unsigned char offset);
 
 void write_dictionary(dictionary *dict, char *string, void *value, unsigned char offset);

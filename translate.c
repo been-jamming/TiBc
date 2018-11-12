@@ -178,7 +178,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					operation->address2 = *(func->local_size) - expr->expr1->var_pointer->offset + *local_offset - 1;
 					add_instruction(instructions, operation);
 				} else if(expr->expr1->var_pointer->type == GLOBAL){
-					translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
+					translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
 					operation = create_instruction(MOV);
 					if(!expr->expr2->reg){
 						operation->type1 = LOCAL;
@@ -778,7 +778,9 @@ int main(int argc, char **argv){
 	write_dictionary(&local_space, "ben", var_pointer, 0);
 
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
-	
+
+	free(*token_list_pointer);
+
 	regs = create_reg_list(5);
 	
 	translate_program(global_space, &instructions, regs);
