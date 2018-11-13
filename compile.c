@@ -52,7 +52,7 @@ block *create_block(dictionary *variables, unsigned int *local_size){
 
 void free_block(block *b){
 	while(b->statements){
-		//free_statement(b->statements->value);
+		free_statement(b->statements->value);
 		b->statements = b->statements->next;
 		free(b->statements->previous);
 	}
@@ -74,6 +74,30 @@ expression *create_expression(unsigned char type, unsigned char sub_type){
 	return output;
 }
 
+void free_expression(expression *e){
+	if(e->type == OPERATOR){
+		free_expression(e->expr1);
+		free_expression(e->expr2);
+	} else if(e->type == UNARY){
+		free_expression(e->expr2);
+	} else if(e->type == LITERAL){
+		free_constant(e->const_pointer);
+	} else if(e->type == RUNFUNCTION){
+		free_expression(e->expr2);
+		while(e->func_arguments){
+			free_expression((expression *) e->func_arguments->value);
+			e->func_arguments = e->func_arguments->next;
+			free(e->func_arguments->previous);
+		}
+	} else if(e->type == IDENTIFIER){
+		free_variable(e->var_pointer);
+	} else {
+		printf("unknown expression free type %d\n", (int) e->type);
+	}
+
+	free(e);
+}
+
 statement *create_statement(unsigned char type, unsigned char sub_type){
 	statement *output;
 	output = malloc(sizeof(statement));
@@ -83,6 +107,19 @@ statement *create_statement(unsigned char type, unsigned char sub_type){
 	output->code = (block *) 0;
 	
 	return output;
+}
+
+void free_statement(statement *s){
+	if(!s->type){
+		free_expression(s->expr);
+	} else if(s->type == IF || s->type == WHILE){
+		free_expression(s->expr);
+		free_block(s->code);
+	} else if(s->type == RETURN){
+		free_expression(s->expr);
+	}
+
+	free(s);
 }
 
 void add_constant(linked_list **list, constant *c){
