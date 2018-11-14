@@ -96,6 +96,8 @@ statement *create_statement(unsigned char type, unsigned char sub_type);
 
 void free_statement(statement *s);
 
+void free_space(dictionary global_space);
+
 expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
 
 expression *literal_expression(token t, linked_list **const_list, unsigned int *const_offset);

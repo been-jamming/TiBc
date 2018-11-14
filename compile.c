@@ -20,6 +20,11 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 
 void free_variable(variable *var){
 	free(var->name);
+	
+	if(var->is_function){
+		free(var->function->local_size);
+		free_block(var->function);
+	}
 	free(var);
 }
 
@@ -33,6 +38,10 @@ constant *create_constant(unsigned char type, unsigned int offset){
 }
 
 void free_constant(constant *c){
+	if(!c){
+		return;
+	}
+
 	if(c->type == STRING){
 		free(c->string_value);
 	}
@@ -51,10 +60,13 @@ block *create_block(dictionary *variables, unsigned int *local_size){
 }
 
 void free_block(block *b){
+	linked_list *last;
+	
 	while(b->statements){
-		free_statement(b->statements->value);
+		last = b->statements;
 		b->statements = b->statements->next;
-		free(b->statements->previous);
+		free_statement((statement *) last->value);
+		free(last);
 	}
 
 	free(b);
@@ -75,6 +87,8 @@ expression *create_expression(unsigned char type, unsigned char sub_type){
 }
 
 void free_expression(expression *e){
+	linked_list *last;
+
 	if(e->type == OPERATOR){
 		free_expression(e->expr1);
 		free_expression(e->expr2);
@@ -85,12 +99,13 @@ void free_expression(expression *e){
 	} else if(e->type == RUNFUNCTION){
 		free_expression(e->expr2);
 		while(e->func_arguments){
-			free_expression((expression *) e->func_arguments->value);
+			last = e->func_arguments;
 			e->func_arguments = e->func_arguments->next;
-			free(e->func_arguments->previous);
+			free_expression((expression *) last->value);
+			free(last);
 		}
 	} else if(e->type == IDENTIFIER){
-		free_variable(e->var_pointer);
+		//free_variable(e->var_pointer);
 	} else {
 		printf("unknown expression free type %d\n", (int) e->type);
 	}
@@ -110,16 +125,28 @@ statement *create_statement(unsigned char type, unsigned char sub_type){
 }
 
 void free_statement(statement *s){
+	if(!s){
+		return;
+	}
+
 	if(!s->type){
 		free_expression(s->expr);
-	} else if(s->type == IF || s->type == WHILE){
+	} else if(s->type == KEYWORD && (s->sub_type == IF || s->sub_type == WHILE)){
 		free_expression(s->expr);
 		free_block(s->code);
-	} else if(s->type == RETURN){
+	} else if(s->type == KEYWORD && s->sub_type == RETURN){
 		free_expression(s->expr);
 	}
 
 	free(s);
+}
+
+void _free_variable(void *v){
+	free_variable((variable *) v);
+}
+
+void free_space(dictionary global_space){
+	iterate_dictionary(global_space, _free_variable);
 }
 
 void add_constant(linked_list **list, constant *c){

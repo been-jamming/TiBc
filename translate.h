@@ -68,6 +68,10 @@ struct instruction{
 
 instruction *create_instruction(unsigned char opcode);
 
+void free_instruction(instruction *i);
+
+void free_instructions(instruction *i);
+
 void add_instruction(instruction **instructions, instruction *i);
 
 void translate_dereference(expression *expr, block *func, instruction **instructions, unsigned int *local_offset);

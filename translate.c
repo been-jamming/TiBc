@@ -28,6 +28,25 @@ instruction *create_instruction(unsigned char opcode){
 	return output;
 }
 
+void free_instruction(instruction *i){
+	if(i->opcode == CONSTANT){
+		free_constant(i->const_pointer);
+		printf("\n\nhi\n\n");
+	}
+
+	free(i);
+}
+
+void free_instructions(instruction *i){
+	instruction *last;
+
+	while(i){
+		last = i;
+		i = i->next1;
+		free_instruction(last);
+	}
+}
+
 void add_instruction(instruction **instructions, instruction *i){
 	(*instructions)->next1 = i;
 	*instructions = i;
@@ -707,14 +726,18 @@ void print_instructions(instruction *instructions, FILE *foutput){
 	}
 }
 
+void empty_callback(void *v){}
+
 int main(int argc, char **argv){
-	char *test_program;
-	char **test_program_pointer;
+	char *program;
+	char *program_start;
 	token *token_list;
+	token *token_start;
 	token **token_list_pointer;
 	char *input_name;
 	char *output_name;
 	linked_list *const_list;
+	linked_list *const_list_start;
 	unsigned int token_length;
 	unsigned int token_index;
 	unsigned int const_offset = 0;
@@ -743,10 +766,10 @@ int main(int argc, char **argv){
 	fseek(finput, 0, SEEK_END);
 	program_length = ftell(finput);
 	fseek(finput, 0, SEEK_SET);
-	test_program = malloc(sizeof(char)*(program_length + 1));
-	fread(test_program, program_length, 1, finput);
+	program = malloc(sizeof(char)*(program_length + 1));
+	fread(program, program_length, 1, finput);
 	fclose(finput);
-	test_program[program_length] = (char) 0;
+	program[program_length] = (char) 0;
 
 	instruction *instructions;
 	instruction *original_instructions;
@@ -754,6 +777,7 @@ int main(int argc, char **argv){
 	original_instructions = instructions;
 
 	const_list = create_linked_list((void *) 0);
+	const_list_start = const_list;
 
 	token_list = calloc(10, sizeof(token));
 	token_list_pointer = &token_list;
@@ -761,25 +785,21 @@ int main(int argc, char **argv){
 	token_index = 0;
 	local_offset = 0;
 
-	test_program_pointer = &test_program;
+	program_start = program;
+	parse_program(&program, token_list_pointer, &token_index, &token_length);
+	free(program_start);
+
+	token_start = token_list;
 	
-	parse_program(test_program_pointer, token_list_pointer, &token_index, &token_length);
 	dictionary global_space;
 	dictionary local_space;
 	variable *var_pointer;
 
-	local_space = create_dictionary((void *) 0);
 	global_space = create_dictionary((void *) 0);
-
-	var_pointer = malloc(sizeof(variable));
-	var_pointer->type = 0;
-	var_pointer->offset = 221;
-
-	write_dictionary(&local_space, "ben", var_pointer, 0);
 
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
 
-	free(*token_list_pointer);
+	free(token_start);
 
 	regs = create_reg_list(5);
 	
@@ -788,6 +808,20 @@ int main(int argc, char **argv){
 	foutput = fopen(output_name, "w");
 	print_instructions(original_instructions, foutput);
 	fclose(foutput);
+
+	free_space(global_space);
+	free_instructions(original_instructions);
+	free_dictionary(global_space, empty_callback);
+	free_reg_list(regs);
+
+	linked_list *last;
+
+	while(const_list_start){
+		last = const_list_start;
+		const_list_start = const_list_start->next;
+		free(last);
+	}
+
 	return 0;
 }
 

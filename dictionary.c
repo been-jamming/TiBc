@@ -13,7 +13,10 @@ void _free_dictionary(dictionary *dict, void (*free_value)(void *)){
 	unsigned char i;
 
 	for(i = 0; i < 8; i++){
-		_free_dictionary(dict->next_chars[i], free_value);
+		if(dict->next_chars[i]){
+			_free_dictionary(dict->next_chars[i], free_value);
+			free(dict->next_chars[i]);
+		}
 	}
 
 	free_value(dict->value);
@@ -23,7 +26,10 @@ void free_dictionary(dictionary dict, void (*free_value)(void *)){
 	unsigned char i;
 
 	for(i = 0; i < 8; i++){
-		_free_dictionary(dict.next_chars[i], free_value);
+		if(dict.next_chars[i]){
+			_free_dictionary(dict.next_chars[i], free_value);
+			free(dict.next_chars[i]);
+		}
 	}
 
 	free_value(dict.value);
