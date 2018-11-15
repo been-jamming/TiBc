@@ -25,13 +25,15 @@ instruction *create_instruction(unsigned char opcode){
 	output->opcode = opcode;
 	output->next1 = (instruction *) 0;
 	output->next2 = (instruction *) 0;
+	output->name = (char *) 0;
 	return output;
 }
 
 void free_instruction(instruction *i){
-	if(i->opcode == CONSTANT){
+	if(i->opcode == CONSTANT || i->opcode == SSP){
 		free_constant(i->const_pointer);
-		printf("\n\nhi\n\n");
+	} else if(i->opcode == LABEL){
+		free(i->name);
 	}
 
 	free(i);
@@ -548,7 +550,7 @@ void _translate_program(void *void_var){
 	var = (variable *) void_var;
 	
 	operation = create_instruction(LABEL);
-	operation->name = var->name;
+	operation->name = strdup(var->name);
 	add_instruction(global_instructions, operation);
 	if(var->is_function){
 		translate_function(var, global_instructions, global_regs);
@@ -726,7 +728,7 @@ void print_instructions(instruction *instructions, FILE *foutput){
 	}
 }
 
-void empty_callback(void *v){}
+static void _empty_callback(void *v){}
 
 int main(int argc, char **argv){
 	char *program;
@@ -739,9 +741,11 @@ int main(int argc, char **argv){
 	linked_list *const_list;
 	linked_list *const_list_start;
 	unsigned int token_length;
+	unsigned int num_tokens;
 	unsigned int token_index;
 	unsigned int const_offset = 0;
 	unsigned int local_offset;
+	unsigned int i;
 	unsigned long int program_length;
 	reg_list *regs;
 
@@ -790,7 +794,8 @@ int main(int argc, char **argv){
 	free(program_start);
 
 	token_start = token_list;
-	
+	num_tokens = token_length;
+
 	dictionary global_space;
 	dictionary local_space;
 	variable *var_pointer;
@@ -811,7 +816,7 @@ int main(int argc, char **argv){
 
 	free_space(global_space);
 	free_instructions(original_instructions);
-	free_dictionary(global_space, empty_callback);
+	free_dictionary(global_space, _empty_callback);
 	free_reg_list(regs);
 
 	linked_list *last;
