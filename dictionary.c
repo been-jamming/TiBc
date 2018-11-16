@@ -19,7 +19,9 @@ void _free_dictionary(dictionary *dict, void (*free_value)(void *)){
 		}
 	}
 
-	free_value(dict->value);
+	if(dict->value){
+		free_value(dict->value);
+	}
 }
 
 void free_dictionary(dictionary dict, void (*free_value)(void *)){
@@ -32,7 +34,9 @@ void free_dictionary(dictionary dict, void (*free_value)(void *)){
 		}
 	}
 
-	free_value(dict.value);
+	if(dict.value){
+		free_value(dict.value);
+	}
 }
 
 void *read_dictionary(dictionary dict, char *string, unsigned char offset){

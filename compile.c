@@ -28,7 +28,7 @@ void free_variable(variable *var){
 	
 	if(var->is_function){
 		free(var->function->local_size);
-		iterate_dictionary(*(var->function->variables), _free_variable);
+		free_dictionary(*(var->function->variables), _free_variable);
 		free(var->function->variables);
 		free_block(var->function);
 	}

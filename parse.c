@@ -567,6 +567,10 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = SEMICOLON});
 		}
 	} else {
+		if(current_token.type == IDENTIFIER){
+			free(current_token.string_value);
+		}
+
 		*token_index = old_token_index;
 		*c = old_c;
 		parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = SEMICOLON});
