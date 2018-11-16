@@ -22,6 +22,7 @@ reg_list *create_reg_list(unsigned int num_regs){
 
 void free_reg_list(reg_list *r){
 	free(r->regs);
+	free(r->positions);
 	free(r);
 }
 

@@ -7,6 +7,10 @@
 dictionary global_namespace;
 unsigned const int operator_precedence[] = {0, 999, 3, 3, 2, 2, 999, 999, 999, 999, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 6, 1};
 
+static void _empty_callback(void *v){}
+
+static void _free_variable(void *v);
+
 variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	variable *output;
 
@@ -14,12 +18,20 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	output->type = type;
 	output->offset = offset;
 	output->name = name;
+	output->is_function = 0;
 	
 	return output;
 }
 
 void free_variable(variable *var){
 	free(var->name);
+	
+	if(var->is_function){
+		free(var->function->local_size);
+		free_dictionary(*(var->function->variables), _free_variable);
+		free(var->function->variables);
+		free_block(var->function);
+	}
 	free(var);
 }
 
@@ -33,6 +45,10 @@ constant *create_constant(unsigned char type, unsigned int offset){
 }
 
 void free_constant(constant *c){
+	if(!c){
+		return;
+	}
+
 	if(c->type == STRING){
 		free(c->string_value);
 	}
@@ -51,10 +67,13 @@ block *create_block(dictionary *variables, unsigned int *local_size){
 }
 
 void free_block(block *b){
+	linked_list *last;
+	
 	while(b->statements){
-		//free_statement(b->statements->value);
+		last = b->statements;
 		b->statements = b->statements->next;
-		free(b->statements->previous);
+		free_statement((statement *) last->value);
+		free(last);
 	}
 
 	free(b);
@@ -74,6 +93,33 @@ expression *create_expression(unsigned char type, unsigned char sub_type){
 	return output;
 }
 
+void free_expression(expression *e){
+	linked_list *last;
+
+	if(e->type == OPERATOR){
+		free_expression(e->expr1);
+		free_expression(e->expr2);
+	} else if(e->type == UNARY){
+		free_expression(e->expr2);
+	} else if(e->type == LITERAL){
+		free_constant(e->const_pointer);
+	} else if(e->type == RUNFUNCTION){
+		free_expression(e->expr2);
+		while(e->func_arguments){
+			last = e->func_arguments;
+			e->func_arguments = e->func_arguments->next;
+			free_expression((expression *) last->value);
+			free(last);
+		}
+	} else if(e->type == IDENTIFIER){
+		//free_variable(e->var_pointer);
+	} else {
+		printf("unknown expression free type %d\n", (int) e->type);
+	}
+
+	free(e);
+}
+
 statement *create_statement(unsigned char type, unsigned char sub_type){
 	statement *output;
 	output = malloc(sizeof(statement));
@@ -83,6 +129,31 @@ statement *create_statement(unsigned char type, unsigned char sub_type){
 	output->code = (block *) 0;
 	
 	return output;
+}
+
+void free_statement(statement *s){
+	if(!s){
+		return;
+	}
+
+	if(!s->type){
+		free_expression(s->expr);
+	} else if(s->type == KEYWORD && (s->sub_type == IF || s->sub_type == WHILE)){
+		free_expression(s->expr);
+		free_block(s->code);
+	} else if(s->type == KEYWORD && s->sub_type == RETURN){
+		free_expression(s->expr);
+	}
+
+	free(s);
+}
+
+static void _free_variable(void *v){
+	free_variable((variable *) v);
+}
+
+void free_space(dictionary global_space){
+	iterate_dictionary(global_space, _free_variable);
 }
 
 void add_constant(linked_list **list, constant *c){
@@ -144,6 +215,7 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 				child = child->expr2;
 			}
 			child->expr2 = variable_expression(global_space, local_space, (*token_list)->string_value);
+			free((*token_list)->string_value);
 			child->expr2->parent = child;
 		} else if((*token_list)->type == LITERAL){
 			child = current_expression;
@@ -384,9 +456,8 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 			++*token_list;
 			--*token_length;
 			if((*token_list)->type == IDENTIFIER){
-				if(read_dictionary(*global_space, (*token_list)->string_value, 0)){
-					var_pointer = read_dictionary(*global_space, (*token_list)->string_value, 0);
-				} else {
+				var_pointer = read_dictionary(*global_space, (*token_list)->string_value, 0);
+				if(!var_pointer){
 					var_pointer = create_variable(GLOBAL, 0, (*token_list)->string_value);
 					write_dictionary(global_space, (*token_list)->string_value, var_pointer, 0);
 				}

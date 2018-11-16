@@ -90,9 +90,13 @@ void free_block(block *b);
 
 expression *create_expression(unsigned char type, unsigned char sub_type);
 
+void free_expression(expression *e);
+
 statement *create_statement(unsigned char type, unsigned char sub_type);
 
 void free_statement(statement *s);
+
+void free_space(dictionary global_space);
 
 expression *variable_expression(dictionary *global_space, dictionary *local_space, char *var_string);
 
