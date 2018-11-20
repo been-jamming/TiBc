@@ -109,6 +109,9 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 			load_a->address1 = *(func->local_size) - expr->var_pointer->offset + *local_offset - 1;
 		} else if(load_a->type1 == GLOBAL){
 			load_a->name = expr->var_pointer->name;
+			if(!expr->var_pointer->is_function){
+				load_a->type1 = GLOBALINDIRECT;
+			}
 		}
 
 		if(reg){
@@ -579,11 +582,15 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					fprintf(foutput, "#%d,-(A7)", instructions->const_pointer->int_value);
 				}
 			} else if(instructions->type1 == LOCAL){
-				fprintf(foutput, "%d(A7),-(A7)", instructions->address1*4);
+				fprintf(foutput, "%d(A7),D7\n", instructions->address1*4);
+				fprintf(foutput, "	move.l D7,-(A7)\n");
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "#%s,-(A7)", instructions->name);
+			} else if(instructions->type1 == GLOBALINDIRECT){
+				fprintf(foutput, "(%s),-(A7)", instructions->name);
 			} else if(instructions->type1 == STACKRELATIVE){
-				fprintf(foutput, "A7,-(A7)\n");
+				fprintf(foutput, "A7,D7\n");
+				fprintf(foutput, "	move.l D7,-(A7)\n");
 				fprintf(foutput, "	add.l #%d,(A7)", instructions->address1);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,-(A7)", instructions->address1 - 1);
@@ -593,7 +600,8 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "(A7)+,(%s)", instructions->name);
 			} else if(instructions->type1 == LOCAL){
-				fprintf(foutput, "(A7)+,%d(A7)", instructions->address1);
+				fprintf(foutput, "(A7)+,D7\n");
+				fprintf(foutput, "	move.l D7,%d(A7)", (instructions->address1 - 1)*4);
 			} else if(instructions->type1 == LOCALINDIRECT){
 				fprintf(foutput, "%d(A7),A0\n", instructions->address1*4);
 				fprintf(foutput, "	move.l (A7)+,(A0)", instructions->address1);
@@ -606,20 +614,36 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "%d(A7),", instructions->address1*4);
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "#%s,", instructions->name);
+			} else if(instructions->type1 == GLOBALINDIRECT){
+				fprintf(foutput, "(%s),", instructions->name);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,", instructions->address1 - 1);
 			} else if(instructions->type1 == LITERAL){
 				fprintf(foutput, "#%d,", instructions->const_pointer->int_value);
+			} else if(instructions->type1 == STACKRELATIVE){
+				fprintf(foutput, "A7,");
 			}
 
 			if(instructions->type2 == LOCAL){
 				fprintf(foutput, "%d(A7)", instructions->address2*4);
+				if(instructions->type1 == STACKRELATIVE){
+					fprintf(foutput, "\n	addi.l #%d,%d(A7)", instructions->address1*4, instructions->address2*4);
+				}
 			} else if(instructions->type2 == GLOBAL){
 				fprintf(foutput, "(%s)", instructions->name2);
+				if(instructions->type1 == STACKRELATIVE){
+					fprintf(foutput, "\n	addi.l #%d,(%s)", instructions->address1*4, instructions->name2);
+				}
 			} else if(instructions->type2 == LOCALINDIRECT){
 				fprintf(foutput, "D7\n	move.l %d(A7),A0\n	move.l D7,(A0)", instructions->address2*4);
+				if(instructions->type1 == STACKRELATIVE){
+					fprintf(foutput, "\n	addi.l #%d,(A0)", instructions->address1*4);
+				}
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address2 - 1);
+				if(instructions->type1 == STACKRELATIVE){
+					fprintf(foutput, "\n	addi.l #%d,D%d", instructions->address1*4, instructions->address2 - 1);
+				}
 			}
 		} else if(instructions->opcode == BZSTACK){
 			fprintf(foutput, "	move.l (A7)+,D7\n");
@@ -775,7 +799,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 		} else if(instructions->opcode == LABEL){
 			fprintf(foutput, "\n%s:", instructions->name);
 		} else if(instructions->opcode == CONSTANT){
-			fprintf(foutput, "%d", instructions->const_pointer->int_value);
+			fprintf(foutput, "DATA DC.L %08x", instructions->const_pointer->int_value);
 		}
 		fprintf(foutput, "\n");
 	}
@@ -820,6 +844,8 @@ void print_instructions(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "from register %d ", instructions->address1);
 			} else if(instructions->type1 == LITERAL){
 				fprintf(foutput, "%d ", instructions->const_pointer->int_value);
+			} else if(instructions->type1 == STACKRELATIVE){
+				fprintf(foutput, "stack pointer %d ", instructions->address1);
 			}
 
 			if(instructions->type2 == LOCAL){
