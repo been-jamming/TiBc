@@ -122,8 +122,8 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		expr->reg = reg;
 	} else if(expr->type == OPERATOR){
 		if(expr->sub_type != ASSIGN){
-			translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
-			translate_expression(expr->expr1, func, instructions, local_offset, regs, 0);
+			translate_expression(expr->expr1, func, instructions, local_offset, regs, to_stack);
+			translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
 			
 			if(expr->sub_type == ADD){
 				operation = create_instruction(ADDOP);
@@ -150,32 +150,32 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				exit(1);
 			}
 
-			if(!expr->expr1->reg){
+			if(!expr->expr2->reg){
 				operation->type1 = LOCAL;
 				operation->address1 = 0;
 				--*local_offset;
 			} else {
 				operation->type1 = REGISTER;
-				operation->address1 = expr->expr1->reg;
-				free_register(regs, expr->expr1->reg);
+				operation->address1 = expr->expr2->reg;
+				free_register(regs, expr->expr2->reg);
 			}
-			if(!expr->expr2->reg){
+			if(!expr->expr1->reg){
 				operation->type2 = LOCAL;
-				if(!expr->expr1->reg){
+				if(!expr->expr2->reg){
 					operation->address2 = 1;
 				} else {
 					operation->address2 = 0;
 				}
-				expr->reg = expr->expr2->reg;
+				expr->reg = expr->expr1->reg;
 			} else {
 				operation->type2 = REGISTER;
-				operation->address2 = expr->expr2->reg;
-				expr->reg = expr->expr2->reg;
+				operation->address2 = expr->expr1->reg;
+				expr->reg = expr->expr1->reg;
 			}
 
 			add_instruction(instructions, operation);
 		
-			if(!expr->expr1->reg){
+			if(!expr->expr2->reg){
 				operation = create_instruction(SSP);
 				operation->const_pointer = create_constant(INTEGER, 0);
 				operation->const_pointer->int_value = -1;
