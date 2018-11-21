@@ -148,6 +148,20 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				operation = create_instruction(OROP);
 			} else if(expr->sub_type == AND){
 				operation = create_instruction(ANDOP);
+			} else if(expr->sub_type == ELEMENT){
+				operation = create_instruction(LSLOP);
+				if(!expr->expr2->reg){
+					operation->type2 = LOCAL;
+					operation->address2 = 0;
+				} else {
+					operation->type2 = REGISTER;
+					operation->address2 = expr->expr2->reg;
+				}
+				operation->type1 = LITERAL;
+				operation->const_pointer = create_constant(INTEGER, 0);
+				operation->const_pointer->int_value = 2;
+				add_instruction(instructions, operation);
+				operation = create_instruction(ADDOP);
 			} else {
 				printf("Operation not implemented: %d\n", (int) expr->sub_type);
 				exit(1);
@@ -182,6 +196,18 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				operation = create_instruction(SSP);
 				operation->const_pointer = create_constant(INTEGER, 0);
 				operation->const_pointer->int_value = -1;
+				add_instruction(instructions, operation);
+			}
+
+			if(expr->sub_type == ELEMENT){
+				operation = create_instruction(DEREF);
+				if(!expr->reg){
+					operation->type1 = LOCAL;
+					operation->address1 = 0;
+				} else {
+					operation->type1 = REGISTER;
+					operation->address1 = expr->reg;
+				}
 				add_instruction(instructions, operation);
 			}
 		} else {
@@ -583,7 +609,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				}
 			} else if(instructions->type1 == LOCAL){
 				fprintf(foutput, "%d(A7),D7\n", instructions->address1*4);
-				fprintf(foutput, "	move.l D7,-(A7)\n");
+				fprintf(foutput, "	move.l D7,-(A7)");
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "#%s,-(A7)", instructions->name);
 			} else if(instructions->type1 == GLOBALINDIRECT){
@@ -591,7 +617,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type1 == STACKRELATIVE){
 				fprintf(foutput, "A7,D7\n");
 				fprintf(foutput, "	move.l D7,-(A7)\n");
-				fprintf(foutput, "	add.l #%d,(A7)", instructions->address1);
+				fprintf(foutput, "	add.l #%d,(A7)\n", instructions->address1);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,-(A7)", instructions->address1 - 1);
 			}
@@ -664,6 +690,22 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					fprintf(foutput, "#%d,A7", -instructions->const_pointer->int_value*4);
 				}
 			}
+		} else if(instructions->opcode == LSLOP){
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
+			}
+			fprintf(foutput, "	lsl.l ");
+			if(instructions->type1 == LITERAL){
+				fprintf(foutput, "#%d,", instructions->const_pointer->int_value);
+			}
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "D7", instructions->address2*4);
+			} else if(instructions->type2 == REGISTER){
+				fprintf(foutput, "D%d", instructions->address2 - 1);
+			}
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "\n	move.l D7,%d(A7)", instructions->address2*4);
+			}
 		} else if(
 				instructions->opcode == ADDOP ||
 				instructions->opcode == SUBOP ||
@@ -675,6 +717,10 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				instructions->opcode == GTOP ||
 				instructions->opcode == EQOP ||
 				instructions->opcode == NEQOP){
+			if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+			}
+
 			switch(instructions->opcode){
 				case ADDOP:
 					fprintf(foutput, "	add.l ");
@@ -708,7 +754,9 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					break;
 			}
 
-			if(instructions->type1 == LOCAL){
+			if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
+				fprintf(foutput, "D7,");
+			} else if(instructions->type1 == LOCAL){
 				fprintf(foutput, "%d(A7),", instructions->address1*4);
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "(%s),", instructions->name);

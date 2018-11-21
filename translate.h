@@ -46,6 +46,8 @@
 #define BZOP 41
 #define BNZOP 42
 #define NOTOP 43
+#define LSLOP 44
+#define LSROP 45
 
 typedef struct instruction instruction;
 
@@ -85,5 +87,9 @@ void translate_block(block *b, block *func, instruction **instructions, unsigned
 void translate_function(variable *var, instruction **instructions, reg_list *regs);
 
 void translate_program(dictionary global_space, instruction **instructions, reg_list *regs);
+
+void print_instructions_68k(instruction *instructions, FILE *foutput);
+
+void print_instructions(instruction *instructions, FILE *foutput);
 #endif
 
