@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 dictionary global_namespace;
-unsigned const int operator_precedence[] = {0, 999, 3, 3, 2, 2, 999, 999, 999, 999, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 6, 1};
+unsigned const int operator_precedence[] = {0, 127, 3, 3, 2, 2, 127, 127, 127, 127, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 1, 5};
 
 static void _empty_callback(void *v){}
 
@@ -341,6 +341,7 @@ void order_expression(expression **expr){
 		child->expr2 = parent;
 		child->parent = parent->parent;
 		parent->parent = child;
+		order_expression(&(child->expr2));
 	}
 }
 

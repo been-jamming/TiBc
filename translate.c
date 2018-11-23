@@ -268,10 +268,10 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 
 				if(!expr->expr1->reg){
 					operation->type2 = LOCALINDIRECT;
-					operation->address1 = 0;
+					operation->address2 = 0;
 				} else {
 					operation->type2 = REGISTERINDIRECT;
-					operation->address1 = expr->expr1->reg;
+					operation->address2 = expr->expr1->reg;
 				}
 
 				add_instruction(instructions, operation);
@@ -633,9 +633,22 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "	move.l (A7)+,(A0)", instructions->address1);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "(A7)+,D%d", instructions->address1 - 1);
+			} else if(instructions->type1 == GLOBALINDIRECT){
+				fprintf(foutput, "(%s),A0\n", instructions->name);
+				fprintf(foutput, "	move.l (A7)+,(A0)");
+			} else if(instructions->type1 == REGISTERINDIRECT){
+				fprintf(foutput, "D%d,A0\n", instructions->address1 - 1);
+				fprintf(foutput, "	move.l (A7)+,(A0)");
 			}
 		} else if(instructions->opcode == MOV){
 			fprintf(foutput, "	move.l ");
+
+			if(instructions->type2 == GLOBALINDIRECT){
+				fprintf(foutput, "(%s),A0\n	move.l ", instructions->name2);
+			} else if(instructions->type2 == REGISTERINDIRECT){
+				fprintf(foutput, "D%d,A0\n	move.l ", instructions->address2 - 1);
+			}
+
 			if(instructions->type1 == LOCAL){
 				fprintf(foutput, "%d(A7),", instructions->address1*4);
 			} else if(instructions->type1 == GLOBAL){
@@ -670,6 +683,13 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				if(instructions->type1 == STACKRELATIVE){
 					fprintf(foutput, "\n	addi.l #%d,D%d", instructions->address1*4, instructions->address2 - 1);
 				}
+			} else if(instructions->type2 == GLOBALINDIRECT || instructions->type2 == REGISTERINDIRECT){
+				fprintf(foutput, "(A0)");
+				if(instructions->type1 == STACKRELATIVE){
+					fprintf(foutput, "\n	addi.l #%d,(A0)", instructions->address1*4);
+				}
+			} else {
+				printf("unknown move destination: %d\n", (int) instructions->type2);
 			}
 		} else if(instructions->opcode == BZSTACK){
 			fprintf(foutput, "	move.l (A7)+,D7\n");
@@ -729,28 +749,28 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					fprintf(foutput, "	sub.l ");
 					break;
 				case MULOP:
-					fprintf(foutput, "	MULL");
+					fprintf(foutput, "	MULL ");
 					break;
 				case DIVOP:
-					fprintf(foutput, "	DIVL");
+					fprintf(foutput, "	DIVL ");
 					break;
 				case OROP:
-					fprintf(foutput, "	or.l");
+					fprintf(foutput, "	or.l ");
 					break;
 				case ANDOP:
-					fprintf(foutput, "	and.l");
+					fprintf(foutput, "	and.l ");
 					break;
 				case LTOP:
-					fprintf(foutput, "	sub.l");
+					fprintf(foutput, "	sub.l ");
 					break;
 				case GTOP:
-					fprintf(foutput, "	sub.l");
+					fprintf(foutput, "	sub.l ");
 					break;
 				case EQOP:
-					fprintf(foutput, "	sub.l");
+					fprintf(foutput, "	sub.l ");
 					break;
 				case NEQOP:
-					fprintf(foutput, "	sub.l");
+					fprintf(foutput, "	sub.l ");
 					break;
 			}
 
@@ -774,47 +794,47 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 
 			if(instructions->opcode == LTOP){
 				if(instructions->type2 == LOCAL){
-					fprintf(foutput, "	slt %d(A7)\n", instructions->address2*4);
+					fprintf(foutput, "\n	slt %d(A7)\n", instructions->address2*4 + 3);
 					fprintf(foutput, "	andi.l #$000000FF,%d(A7)", instructions->address2*4);
 				} else if(instructions->type2 == GLOBAL){
-					fprintf(foutput, "	slt (%s)\n", instructions->name2);
+					fprintf(foutput, "\n	slt 3(%s)\n", instructions->name2);
 					fprintf(foutput, "	andi.l #$000000FF,(%s)", instructions->name2);
 				} else if(instructions->type2 == REGISTER){
-					fprintf(foutput, "	slt D%d\n", instructions->address2 - 1);
-					fprintf(foutput, "	andi.l #$000000FF,D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "\n	slt D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "	andi.l #$000000FF,D%d", instructions->address2 - 1);
 				}
 			} else if(instructions->opcode == GTOP){
 				if(instructions->type2 == LOCAL){
-					fprintf(foutput, "	sgt %d(A7)\n", instructions->address2*4);
+					fprintf(foutput, "\n	sgt %d(A7)\n", instructions->address2*4 + 3);
 					fprintf(foutput, "	andi.l #$000000FF,%d(A7)", instructions->address2*4);
 				} else if(instructions->type2 == GLOBAL){
-					fprintf(foutput, "	sgt (%s)\n", instructions->name2);
+					fprintf(foutput, "\n	sgt 3(%s)\n", instructions->name2);
 					fprintf(foutput, "	andi.l #$000000FF,(%s)", instructions->name2);
 				} else if(instructions->type2 == REGISTER){
-					fprintf(foutput, "	sgt D%d\n", instructions->address2 - 1);
-					fprintf(foutput, "	andi.l #$000000FF,D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "\n	sgt D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "	andi.l #$000000FF,D%d", instructions->address2 - 1);
 				}
 			} else if(instructions->opcode == EQOP){
 				if(instructions->type2 == LOCAL){
-					fprintf(foutput, "	seq %d(A7)\n", instructions->address2*4);
+					fprintf(foutput, "\n	seq %d(A7)\n", instructions->address2*4 + 3);
 					fprintf(foutput, "	andi.l #$000000FF,%d(A7)", instructions->address2*4);
 				} else if(instructions->type2 == GLOBAL){
-					fprintf(foutput, "	seq (%s)\n", instructions->name2);
+					fprintf(foutput, "\n	seq 3(%s)\n", instructions->name2);
 					fprintf(foutput, "	andi.l #$000000FF,(%s)", instructions->name2);
 				} else if(instructions->type2 == REGISTER){
-					fprintf(foutput, "	seq D%d\n", instructions->address2 - 1);
-					fprintf(foutput, "	andi.l #$000000FF,D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "\n	seq D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "	andi.l #$000000FF,D%d", instructions->address2 - 1);
 				}
 			} else if(instructions->opcode == NEQOP){
 				if(instructions->type2 == LOCAL){
-					fprintf(foutput, "	sne %d(A7)\n", instructions->address2*4);
+					fprintf(foutput, "\n	sne %d(A7)\n", instructions->address2*4 + 3);
 					fprintf(foutput, "	andi.l #$000000FF,%d(A7)", instructions->address2*4);
 				} else if(instructions->type2 == GLOBAL){
-					fprintf(foutput, "	sne (%s)\n", instructions->name2);
+					fprintf(foutput, "\n	sne 3(%s)\n", instructions->name2);
 					fprintf(foutput, "	andi.l #$000000FF,(%s)", instructions->name2);
 				} else if(instructions->type2 == REGISTER){
-					fprintf(foutput, "	sne D%d\n", instructions->address2 - 1);
-					fprintf(foutput, "	andi.l #$000000FF,D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "\n	sne D%d\n", instructions->address2 - 1);
+					fprintf(foutput, "	andi.l #$000000FF,D%d", instructions->address2 - 1);
 				}
 			}
 		} else if(instructions->opcode == NOTOP){
@@ -866,6 +886,8 @@ void print_instructions(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "from stack %d", instructions->address1);
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "label %s", instructions->name);
+			} else if(instructions->type1 == GLOBALINDIRECT){
+				fprintf(foutput, "value pointed to by %s", instructions->name);
 			} else if(instructions->type1 == STACKRELATIVE){
 				fprintf(foutput, "stack pointer %d", instructions->address1);
 			} else if(instructions->type1 == REGISTER){
@@ -894,6 +916,8 @@ void print_instructions(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "%d ", instructions->const_pointer->int_value);
 			} else if(instructions->type1 == STACKRELATIVE){
 				fprintf(foutput, "stack pointer %d ", instructions->address1);
+			} else {
+				fprintf(foutput, "from address in %s ", instructions->name);
 			}
 
 			if(instructions->type2 == LOCAL){

@@ -3,6 +3,7 @@
 #include "parse.h"
 #include "compile.h"
 #include "allocate.h"
+#include <stdio.h>
 
 //Instructions
 
