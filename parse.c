@@ -90,7 +90,7 @@ token get_token(char **c){
 		output.int_value = get_integer((unsigned char **) c);
 	} else if(**c == '-'){
 		++*c;
-		if(last_token.type != IDENTIFIER && last_token.type != LITERAL && (last_token.type != CONTROL || last_token.sub_type != CLOSEPARENTHESES)){
+		if(last_token.type != IDENTIFIER && last_token.type != LITERAL && (last_token.type != CONTROL || last_token.sub_type != CLOSEPARENTHESES) && (last_token.type != CONTROL || last_token.sub_type != CLOSEBRACKET)){
 			if(is_digit(**c)){
 				output.type = LITERAL;
 				output.sub_type = INTEGER;
@@ -208,7 +208,8 @@ token get_token(char **c){
 		output.sub_type = ELEMENT;
 	} else if(**c == ']'){
 		++*c;
-		output = get_token(c);
+		output.type = CONTROL;
+		output.sub_type = CLOSEBRACKET;
 	} else if(is_alpha(**c)){
 		if(**c == 'i'){
 			++*c;
@@ -418,20 +419,29 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			
 			temp_c2 = *c;
 			next_token = get_token(c);
-			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
-				add_token(token_list, next_token, token_index, token_length);
-				skip_whitespace(c);
-				if(**c == ')'){
-					next_token = get_token(c);
+			while((next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES) || (next_token.type == OPERATOR && next_token.sub_type == ELEMENT)){
+				if(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
 					add_token(token_list, next_token, token_index, token_length);
-				} else {
-					while(*(*c - 1) != ')'){
-						parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+					skip_whitespace(c);
+					if(**c == ')'){
+						next_token = get_token(c);
+						add_token(token_list, next_token, token_index, token_length);
+					} else {
+						while(*(*c - 1) != ')'){
+							parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+						}
 					}
+					skip_whitespace(c);
+					temp_c2 = *c;
+					next_token = get_token(c);
+				} else if(next_token.type == OPERATOR && next_token.sub_type == ELEMENT){
+					add_token(token_list, next_token, token_index, token_length);
+					skip_whitespace(c);
+					parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = CLOSEBRACKET});
+					skip_whitespace(c);
+					temp_c2 = *c;
+					next_token = get_token(c);
 				}
-				skip_whitespace(c);
-				temp_c2 = *c;
-				next_token = get_token(c);
 			}
 
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type) && (next_token.type != CONTROL || next_token.sub_type != CLOSEPARENTHESES)){
@@ -452,20 +462,29 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			temp_c2 = *c;
 			next_token = get_token(c);
 
-			while(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
-				add_token(token_list, next_token, token_index, token_length);
-				skip_whitespace(c);
-				if(**c == ')'){
-					next_token = get_token(c);
+			while((next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES) || (next_token.type == OPERATOR && next_token.sub_type == ELEMENT)){
+				if(next_token.type == CONTROL && next_token.sub_type == OPENPARENTHESES){
 					add_token(token_list, next_token, token_index, token_length);
-				} else {
-					while(*(*c - 1) != ')'){
-						parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+					skip_whitespace(c);
+					if(**c == ')'){
+						next_token = get_token(c);
+						add_token(token_list, next_token, token_index, token_length);
+					} else {
+						while(*(*c - 1) != ')'){
+							parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = COMMA});
+						}
 					}
+					skip_whitespace(c);
+					temp_c2 = *c;
+					next_token = get_token(c);
+				} else if(next_token.type == OPERATOR && next_token.sub_type == ELEMENT){
+					add_token(token_list, next_token, token_index, token_length);
+					skip_whitespace(c);
+					parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = CLOSEBRACKET});
+					skip_whitespace(c);
+					temp_c2 = *c;
+					next_token = get_token(c);
 				}
-				skip_whitespace(c);
-				temp_c2 = *c;
-				next_token = get_token(c);
 			}
 			
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){

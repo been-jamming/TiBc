@@ -286,6 +286,83 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				} else {
 					free_register(regs, expr->expr1->reg);
 				}
+			} else if(expr->expr1->type == OPERATOR && expr->expr1->sub_type == ELEMENT){
+				translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
+				translate_expression(expr->expr1->expr2, func, instructions, local_offset, regs, 0);
+				translate_expression(expr->expr1->expr1, func, instructions, local_offset, regs, 0);
+				operation = create_instruction(ADDPTR);
+				if(!expr->expr1->expr1->reg){
+					operation->type1 = LOCAL;
+					if(!expr->expr1->expr2->reg){
+						operation->address1 = 1;
+					} else {
+						operation->address1 = 0;
+					}
+				} else {
+					operation->type1 = REGISTER;
+					operation->address1 = expr->expr1->expr1->reg;
+				}
+
+				if(!expr->expr1->expr2->reg){
+					operation->type2 = LOCAL;
+					operation->address2 = 0;
+				} else {
+					operation->type2 = REGISTER;
+					operation->address2 = expr->expr1->expr2->reg;
+				}
+
+				add_instruction(instructions, operation);
+				
+				if(!expr->expr1->expr1->reg){
+					operation = create_instruction(SSP);
+					operation->type1 = LITERAL;
+					operation->const_pointer = create_constant(INTEGER, 0);
+					operation->const_pointer->int_value = -1;
+					add_instruction(instructions, operation);
+					--*local_offset;
+				} else {
+					free_register(regs, expr->expr1->expr1->reg);
+				}
+
+				expr->expr1->reg = expr->expr1->expr2->reg;
+				operation = create_instruction(MOV);
+				if(!expr->expr2->reg){
+					operation->type1 = LOCAL;
+					if(!expr->expr1->reg){
+						operation->address1 = 1;
+					} else {
+						operation->address1 = 0;
+					}
+					expr->reg = 0;
+				} else {
+					operation->type1 = REGISTER;
+					operation->address1 = expr->expr2->reg;
+					expr->reg = expr->expr2->reg;
+				}
+
+				if(!expr->expr1->reg){
+					operation->type2 = LOCALINDIRECT;
+					operation->address2 = 0;
+				} else {
+					operation->type2 = REGISTERINDIRECT;
+					operation->address2 = expr->expr1->reg;
+				}
+
+				add_instruction(instructions, operation);
+
+				if(!expr->expr1->reg){
+					operation = create_instruction(SSP);
+					operation->type1 = LITERAL;
+					operation->const_pointer = create_constant(INTEGER, 0);
+					operation->const_pointer->int_value = -1;
+					add_instruction(instructions, operation);
+					--*local_offset;
+				} else {
+					free_register(regs, expr->expr1->reg);
+				}
+			} else {
+				printf("Invalid assign\n");
+				exit(1);
 			}
 		}
 	} else if(expr->type == UNARY && expr->sub_type == NEGATE){
@@ -726,6 +803,26 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			if(instructions->type2 == LOCAL){
 				fprintf(foutput, "\n	move.l D7,%d(A7)", instructions->address2*4);
 			}
+		} else if(instructions->opcode == ADDPTR){
+			fprintf(foutput, "	lsl.l ");
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "#2,%d(A7)\n", instructions->address2*4);
+			} else if(instructions->type2 == REGISTER){
+				fprintf(foutput, "#2,D%d\n", instructions->address2 - 1);
+			}
+
+			fprintf(foutput, "	add.l ");
+			if(instructions->type1 == LOCAL){
+				fprintf(foutput, "%d(A7),", instructions->address1*4);
+			} else if(instructions->type1 == REGISTER){
+				fprintf(foutput, "D%d,", instructions->address1 - 1);
+			}
+
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "%d(A7)", instructions->address2*4);
+			} else if(instructions->type2 == REGISTER){
+				fprintf(foutput, "D%d", instructions->address2 - 1);
+			}
 		} else if(
 				instructions->opcode == ADDOP ||
 				instructions->opcode == SUBOP ||
@@ -737,10 +834,6 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				instructions->opcode == GTOP ||
 				instructions->opcode == EQOP ||
 				instructions->opcode == NEQOP){
-			if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
-				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
-			}
-
 			switch(instructions->opcode){
 				case ADDOP:
 					fprintf(foutput, "	add.l ");
@@ -774,9 +867,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					break;
 			}
 
-			if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
-				fprintf(foutput, "D7,");
-			} else if(instructions->type1 == LOCAL){
+			if(instructions->type1 == LOCAL){
 				fprintf(foutput, "%d(A7),", instructions->address1*4);
 			} else if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "(%s),", instructions->name);
@@ -958,7 +1049,8 @@ void print_instructions(instruction *instructions, FILE *foutput){
 				instructions->opcode == LTOP ||
 				instructions->opcode == GTOP ||
 				instructions->opcode == EQOP ||
-				instructions->opcode == NEQOP){
+				instructions->opcode == NEQOP ||
+				instructions->opcode == ADDPTR){
 			switch(instructions->opcode){
 				case ADDOP:
 					fprintf(foutput, "ADD ");
@@ -989,6 +1081,9 @@ void print_instructions(instruction *instructions, FILE *foutput){
 					break;
 				case NEQOP:
 					fprintf(foutput, "NEQ ");
+					break;
+				case ADDPTR:
+					fprintf(foutput, "ADDPTR ");
 					break;
 			}
 

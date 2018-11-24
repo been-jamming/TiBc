@@ -49,6 +49,7 @@
 #define NOTOP 43
 #define LSLOP 44
 #define LSROP 45
+#define ADDPTR 46
 
 typedef struct instruction instruction;
 

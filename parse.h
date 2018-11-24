@@ -54,6 +54,7 @@
 	#define CLOSEPARENTHESES 4
 	#define SEMICOLON 5
 	#define COMMA 6
+	#define CLOSEBRACKET 7
 
 //Key words
 

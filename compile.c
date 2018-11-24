@@ -227,6 +227,11 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 		} else if((*token_list)->type == OPERATOR){
 			current_expression->parent = create_expression(OPERATOR, (*token_list)->sub_type);
 			current_expression->parent->expr1 = current_expression;
+			if((*token_list)->sub_type == ELEMENT){
+				++*token_list;
+				current_expression->parent->expr2 = compile_expression(global_space, local_space, token_list, token_length, const_list, const_offset);
+				current_expression->parent->expr2->do_order = 0;
+			}
 			current_expression = current_expression->parent;
 		} else if((*token_list)->type == UNARY){
 			child = current_expression;
