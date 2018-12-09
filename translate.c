@@ -293,11 +293,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				operation = create_instruction(ADDPTR);
 				if(!expr->expr1->expr1->reg){
 					operation->type1 = LOCAL;
-					if(!expr->expr1->expr2->reg){
-						operation->address1 = 1;
-					} else {
-						operation->address1 = 0;
-					}
+					operation->address1 = 0;
 				} else {
 					operation->type1 = REGISTER;
 					operation->address1 = expr->expr1->expr1->reg;
@@ -305,7 +301,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 
 				if(!expr->expr1->expr2->reg){
 					operation->type2 = LOCAL;
-					operation->address2 = 0;
+					operation->address2 = !expr->expr1->expr1->reg;
 				} else {
 					operation->type2 = REGISTER;
 					operation->address2 = expr->expr1->expr2->reg;
@@ -489,6 +485,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		translate_expression(expr->expr2, func, instructions, local_offset, regs, 0);
 		if(!expr->expr2->reg){
 			jmp_instruction = create_instruction(JMPSTACK);
+			--*local_offset;
 		} else {
 			jmp_instruction = create_instruction(JMP);
 			jmp_instruction->type1 = REGISTER;
@@ -537,6 +534,7 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 			operation = create_instruction(POP);
 			operation->type1 = LOCAL;
 			operation->address1 = *(func->local_size) + 2;
+			--*local_offset;
 		} else {
 			operation = create_instruction(MOV);
 			operation->type1 = REGISTER;
@@ -804,18 +802,19 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "\n	move.l D7,%d(A7)", instructions->address2*4);
 			}
 		} else if(instructions->opcode == ADDPTR){
-			fprintf(foutput, "	lsl.l ");
 			if(instructions->type2 == LOCAL){
-				fprintf(foutput, "#2,%d(A7)\n", instructions->address2*4);
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
+				fprintf(foutput, "	lsl.l #2,D7\n", instructions->address2*4);
+				fprintf(foutput, "	move.l D7,%d(A7)\n", instructions->address2*4);
 			} else if(instructions->type2 == REGISTER){
-				fprintf(foutput, "#2,D%d\n", instructions->address2 - 1);
+				fprintf(foutput, "	lsl.l #2,D%d\n", instructions->address2 - 1);
 			}
 
-			fprintf(foutput, "	add.l ");
 			if(instructions->type1 == LOCAL){
-				fprintf(foutput, "%d(A7),", instructions->address1*4);
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+				fprintf(foutput, "	add.l D7,", instructions->address1*4);
 			} else if(instructions->type1 == REGISTER){
-				fprintf(foutput, "D%d,", instructions->address1 - 1);
+				fprintf(foutput, "	add.l D%d,", instructions->address1 - 1);
 			}
 
 			if(instructions->type2 == LOCAL){
@@ -834,6 +833,15 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				instructions->opcode == GTOP ||
 				instructions->opcode == EQOP ||
 				instructions->opcode == NEQOP){
+
+			if((instructions->type1 == LOCAL || instructions->type1 == GLOBAL) && (instructions->type2 == LOCAL || instructions->type2 == GLOBAL)){
+				if(instructions->type1 == LOCAL){
+					fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+				} else if(instructions->type1 == GLOBAL){
+					fprintf(foutput, "	move.l (%s),D7\n", instructions->name);
+				}
+			}
+
 			switch(instructions->opcode){
 				case ADDOP:
 					fprintf(foutput, "	add.l ");
@@ -868,9 +876,17 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			}
 
 			if(instructions->type1 == LOCAL){
-				fprintf(foutput, "%d(A7),", instructions->address1*4);
+				if(instructions->type2 != LOCAL && instructions->type2 != GLOBAL){
+					fprintf(foutput, "%d(A7),", instructions->address1*4);
+				} else {
+					fprintf(foutput, "D7,");
+				}
 			} else if(instructions->type1 == GLOBAL){
-				fprintf(foutput, "(%s),", instructions->name);
+				if(instructions->type2 != LOCAL && instructions->type2 != GLOBAL){
+					fprintf(foutput, "(%s),", instructions->name);
+				} else {
+					fprintf(foutput, "D7,");
+				}
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,", instructions->address1 - 1);
 			}

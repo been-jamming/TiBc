@@ -50,7 +50,7 @@ var free(p){
 	}
 }
 
-var fibinacci(output_pointer, size){
+var fibonacci(output_pointer, size){
 	var val1;
 	var val2;
 	var temp;
@@ -78,6 +78,6 @@ var main(){
 	current_block[2] = 0;
 	
 	output = malloc(20);
-	fibinacci(output, 10);
+	fibonacci(output, 20);
 	free(output);
 }	
