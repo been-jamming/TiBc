@@ -50,6 +50,7 @@ The language TiBc compiles currently is an extremely simple and B-like.
   * Example: `var my_function(a, b){var output; ... return output;}`
 #### Currently Supported Operators
 * Arithmetic operators:```+ - * /```
+  * The operators `*` and `/` have not been fully implemented in 68k assembly yet
 * Logical operators:```& | !```
 * Comparison operators:```< > == !=```
 * Referencing operators:```* &```
@@ -70,13 +71,15 @@ var factorial(n){
 ```
 
 ### Output
-TiBc currently outputs pseudo-assembly for a stack machine.
+TiBc currently outputs Motorola 68k assembly which can be assembled with Easy68k. With slight modification of the main routine, there is also support for outputting pseudo-assembly which follows the rules below. Note that the 68k assembly is directly translated from the pseudo-assembly, and all optimization occurs on the pseudo-assembly and not the actual output. This can lead to small inefficiencies, but makes the compiler portable to other architectures with minimal effort.
+
+#### pseudo-assembly information
 
 Places on the stack are referenced relative to the current location of the stack pointer. Positive references are where the stack is going, and negative references on the stack refer to previous values pushed onto the stack. The references assume that the stack pointer is incremented first before writing the value when pushing to the stack. This, however, can be easily changed for a different architecture.
 
 Stack relative references are with respect to the width of the architectures native word (or possibly a different width). On the Ti89, each integer is 2 bytes, so `SSP -1` would actually decrement the stack pointer by 2 bytes, not one.
 
-*opcodes*
+*pseudo-assembly opcodes*
 * PUSH
   * Pushes an individual value onto the stack, either a constant or relative to the stack pointer.
 * POP
