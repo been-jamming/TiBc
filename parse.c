@@ -575,6 +575,25 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			add_token(token_list, current_token, token_index, token_length);
 			skip_whitespace(c);
 			current_token = get_token(c);
+			if(current_token.type == OPERATOR && current_token.sub_type == ELEMENT){
+				add_token(token_list, current_token, token_index, token_length);
+				skip_whitespace(c);
+				current_token = get_token(c);
+				if(current_token.type != LITERAL || current_token.sub_type != INTEGER){
+					printf("Expected integer literal\n");
+					exit(1);
+				}
+				add_token(token_list, current_token, token_index, token_length);
+				skip_whitespace(c);
+				current_token = get_token(c);
+				if(current_token.type != CONTROL || current_token.sub_type != CLOSEBRACKET){
+					printf("Expected ']' token\n");
+					exit(1);
+				}
+				add_token(token_list, current_token, token_index, token_length);
+				skip_whitespace(c);
+				current_token = get_token(c);
+			}
 			if(current_token.type != CONTROL || current_token.sub_type != SEMICOLON){
 				printf("Expected ';' token\n");
 				exit(1);
@@ -643,7 +662,30 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 		add_token(token_list, current_token, token_index, token_length);
 		skip_whitespace(c);
 		current_token = get_token(c);
-		if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
+		if(current_token.type == OPERATOR && current_token.sub_type == ELEMENT){
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != LITERAL || current_token.sub_type != INTEGER){
+				printf("Expected integer literal\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != CONTROL || current_token.sub_type != CLOSEBRACKET){
+				printf("Expected ']' token\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
+			skip_whitespace(c);
+			current_token = get_token(c);
+			if(current_token.type != CONTROL || current_token.sub_type != SEMICOLON){
+				printf("Expected ';' token\n");
+				exit(1);
+			}
+			add_token(token_list, current_token, token_index, token_length);
+		} else if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
 			add_token(token_list, current_token, token_index, token_length);
 			skip_whitespace(c);
 			current_token = get_token(c);

@@ -19,6 +19,7 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	output->offset = offset;
 	output->name = name;
 	output->is_function = 0;
+	output->size = 1;
 	
 	return output;
 }
@@ -40,6 +41,7 @@ constant *create_constant(unsigned char type, unsigned int offset){
 	output = malloc(sizeof(constant));
 	output->type = type;
 	output->offset = offset;
+	output->size = 1;
 
 	return output;
 }
@@ -364,18 +366,25 @@ statement *compile_statement(dictionary *global_space, dictionary *local_space, 
 				printf("Redefinition of variable: %s\n", (*token_list)->string_value);
 				exit(1);
 			} else {
-				output->var_pointer = create_variable(LOCAL, *local_offset, (*token_list)->string_value);
-				++*local_offset;
-				write_dictionary(local_space, (*token_list)->string_value, output->var_pointer, 0);
 				++*token_list;
-				--*token_length;
-				if((*token_list)->type != CONTROL || (*token_list)->sub_type != SEMICOLON){
-					printf("Expected ';' token\n");
-					exit(1);
+				if((*token_list)->type == CONTROL && (*token_list)->sub_type == SEMICOLON){
+					--*token_list;
+					output->var_pointer = create_variable(LOCAL, *local_offset, (*token_list)->string_value);
+					++*local_offset;
+					write_dictionary(local_space, (*token_list)->string_value, output->var_pointer, 0);
+					*token_list += 2;
+					*token_length -= 2;
+					return output;
+				} else if((*token_list)->type == OPERATOR && (*token_list)->sub_type == ELEMENT){
+					--*token_list;
+					output->var_pointer = create_variable(LOCALLIST, *local_offset + (*token_list + 2)->int_value - 1, (*token_list)->string_value);
+					output->var_pointer->size = (*token_list + 2)->int_value;
+					*local_offset += (*token_list + 2)->int_value;
+					write_dictionary(local_space, (*token_list)->string_value, output->var_pointer, 0);
+					*token_list += 5;
+					*token_length -= 5;
+					return output;
 				}
-				++*token_list;
-				--*token_length;
-				return output;
 			}
 		} else if((*token_list)->sub_type == IF || (*token_list)->sub_type == WHILE){
 			++*token_list;
@@ -510,8 +519,16 @@ void compile_program(dictionary *global_space, token **token_list, unsigned int 
 					var_pointer->is_function = 0;
 					var_pointer->offset = *const_offset;
 					++*const_offset;
+				} else if((*token_list)->type == OPERATOR && (*token_list)->sub_type == ELEMENT){
+					var_pointer->is_function = 0;
+					var_pointer->offset = *const_offset;
+					var_pointer->type = GLOBALLIST;
+					++*token_list;
+					*const_offset += (*token_list)->int_value;
+					var_pointer->size = (*token_list)->int_value;
+					*token_list += 2;
 				} else {
-					printf("Expected ';' or '(' token\n");
+					printf("Expected ';', '(', or '[' token\n");
 					exit(1);
 				}
 				++*token_list;

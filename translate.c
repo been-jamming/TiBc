@@ -104,14 +104,22 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 			load_a = create_instruction(PUSH);
 		}
 
-		load_a->type1 = expr->var_pointer->type;
-		if(load_a->type1 == LOCAL){
+		if(expr->var_pointer->type == LOCAL){
+			load_a->type1 = LOCAL;
 			load_a->address1 = *(func->local_size) - expr->var_pointer->offset + *local_offset - 1;
-		} else if(load_a->type1 == GLOBAL){
+		} else if(expr->var_pointer->type == GLOBAL){
 			load_a->name = expr->var_pointer->name;
 			if(!expr->var_pointer->is_function){
 				load_a->type1 = GLOBALINDIRECT;
+			} else {
+				load_a->type1 = GLOBAL;
 			}
+		} else if(expr->var_pointer->type == LOCALLIST){
+			load_a->type1 = STACKRELATIVE;
+			load_a->address1 = *(func->local_size) - expr->var_pointer->offset + *local_offset - 1;
+		} else if(expr->var_pointer->type == GLOBALLIST){
+			load_a->name = expr->var_pointer->name;
+			load_a->type1 = GLOBAL;
 		}
 
 		if(reg){
@@ -652,6 +660,8 @@ void translate_function(variable *var, instruction **instructions, reg_list *reg
 void _translate_program(void *void_var){
 	instruction *operation;
 	variable *var;
+	unsigned int i;
+
 	var = (variable *) void_var;
 	
 	operation = create_instruction(LABEL);
@@ -662,6 +672,9 @@ void _translate_program(void *void_var){
 	} else {
 		operation = create_instruction(CONSTANT);
 		operation->const_pointer = create_constant(INTEGER, 0);
+		if(var->type == GLOBALLIST){
+			operation->const_pointer->size = var->size;
+		}
 		operation->const_pointer->int_value = 0;
 		add_instruction(global_instructions, operation);
 	}
@@ -674,6 +687,8 @@ void translate_program(dictionary global_space, instruction **instructions, reg_
 }
 
 void print_instructions_68k(instruction *instructions, FILE *foutput){
+	unsigned int i;
+
 	while(instructions->next1){
 		instructions = instructions->next1;
 		if(instructions->opcode == PUSH){
@@ -974,7 +989,12 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 		} else if(instructions->opcode == LABEL){
 			fprintf(foutput, "\n%s:", instructions->name);
 		} else if(instructions->opcode == CONSTANT){
-			fprintf(foutput, "DATA DC.L %08x", instructions->const_pointer->int_value);
+			for(i = 0; i < instructions->const_pointer->size; i++){
+				if(i != 0){
+					fprintf(foutput, "\n");
+				}
+				fprintf(foutput, "	DC.L %08x", instructions->const_pointer->int_value);
+			}
 		}
 		fprintf(foutput, "\n");
 	}
