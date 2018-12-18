@@ -6,11 +6,13 @@
 
 #define LOCAL 8
 #define GLOBAL 9
-#define LOCALINDIRECT 10
-#define GLOBALINDIRECT 11
-#define REGISTER 12
-#define REGISTERINDIRECT 13
-#define STACKRELATIVE 14
+#define LOCALLIST 10
+#define GLOBALLIST 11
+#define LOCALINDIRECT 12
+#define GLOBALINDIRECT 13
+#define REGISTER 14
+#define REGISTERINDIRECT 15
+#define STACKRELATIVE 16
 
 typedef struct block block;
 
@@ -26,9 +28,17 @@ typedef struct variable variable;
 struct variable{
 	unsigned char type;
 	unsigned char is_function;
+	unsigned char is_data;
 	unsigned int offset;
+	unsigned int size;
 	char *name;
-	block *function;
+	union{
+		block *function;
+		struct{
+			unsigned char *data;
+			unsigned int data_size;
+		};
+	};
 	unsigned int reg;
 };
 
@@ -42,6 +52,7 @@ struct constant{
 		char *string_value;
 	};
 	unsigned char offset;
+	unsigned int size;
 };
 
 typedef struct expression expression;
