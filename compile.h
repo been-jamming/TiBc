@@ -28,10 +28,17 @@ typedef struct variable variable;
 struct variable{
 	unsigned char type;
 	unsigned char is_function;
+	unsigned char is_data;
 	unsigned int offset;
 	unsigned int size;
 	char *name;
-	block *function;
+	union{
+		block *function;
+		struct{
+			unsigned char *data;
+			unsigned int data_size;
+		};
+	};
 	unsigned int reg;
 };
 

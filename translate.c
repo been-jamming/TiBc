@@ -19,6 +19,8 @@ unsigned int if_id = 0;
 unsigned int while_id = 0;
 unsigned int function_call_id = 0;
 
+void include68k(dictionary *global_space);
+
 instruction *create_instruction(unsigned char opcode){
 	instruction *output;
 	output = malloc(sizeof(instruction));
@@ -637,8 +639,9 @@ void translate_function(variable *var, instruction **instructions, reg_list *reg
 	unsigned int local_offset;
 	instruction *ssp;
 	instruction *jmp_return;
+	instruction *data;
 
-	if(var->is_function){
+	if(var->is_function && !var->is_data){
 		local_offset = 0;
 		ssp = create_instruction(SSP);
 		ssp->type1 = LITERAL;
@@ -654,6 +657,10 @@ void translate_function(variable *var, instruction **instructions, reg_list *reg
 
 		jmp_return = create_instruction(JMPSTACK);
 		add_instruction(instructions, jmp_return);
+	} else if(var->is_data){
+		data = create_instruction(DATA);
+		data->data = var->data;
+		add_instruction(instructions, data);
 	}
 }
 
@@ -995,7 +1002,10 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				}
 				fprintf(foutput, "	DC.L %08x", instructions->const_pointer->int_value);
 			}
+		} else if(instructions->opcode == DATA){
+			fprintf(foutput, "%s", instructions->data);
 		}
+
 		fprintf(foutput, "\n");
 	}
 }
@@ -1244,12 +1254,14 @@ int main(int argc, char **argv){
 
 	global_space = create_dictionary((void *) 0);
 
+	include68k(&global_space);
+	
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
 
 	free(token_start);
 
 	regs = create_reg_list(7);
-	
+
 	translate_program(global_space, &instructions, regs);
 	
 	foutput = fopen(output_name, "w");

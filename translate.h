@@ -50,6 +50,7 @@
 #define LSLOP 44
 #define LSROP 45
 #define ADDPTR 46
+#define DATA 47
 
 typedef struct instruction instruction;
 
@@ -63,6 +64,7 @@ struct instruction{
 		int address1;
 		constant *const_pointer;
 		char *name;
+		char *data;
 	};
 	union{
 		unsigned int address2;

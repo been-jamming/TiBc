@@ -1,3 +1,5 @@
+#ifndef DICTIONARY_INCLUDED
+#define DICTIONARY_INCLUDED
 typedef struct dictionary dictionary;
 
 struct dictionary{
@@ -14,3 +16,4 @@ void *read_dictionary(dictionary dict, char *string, unsigned char offset);
 void write_dictionary(dictionary *dict, char *string, void *value, unsigned char offset);
 
 void iterate_dictionary(dictionary dict, void (*func)(void *));
+#endif

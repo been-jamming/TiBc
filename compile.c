@@ -19,6 +19,7 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	output->offset = offset;
 	output->name = name;
 	output->is_function = 0;
+	output->is_data = 0;
 	output->size = 1;
 	
 	return output;
@@ -27,12 +28,13 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 void free_variable(variable *var){
 	free(var->name);
 	
-	if(var->is_function){
+	if(var->is_function && !var->is_data){
 		free(var->function->local_size);
 		free_dictionary(*(var->function->variables), _free_variable);
 		free(var->function->variables);
 		free_block(var->function);
 	}
+
 	free(var);
 }
 
