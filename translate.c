@@ -695,6 +695,8 @@ void translate_program(dictionary global_space, instruction **instructions, reg_
 
 void print_instructions_68k(instruction *instructions, FILE *foutput){
 	unsigned int i;
+	unsigned int call_id;
+	unsigned char b;
 
 	while(instructions->next1){
 		instructions = instructions->next1;
@@ -844,11 +846,41 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address2 - 1);
 			}
+		} else if(instructions->opcode == MULOP){
+			call_id = function_call_id;
+			function_call_id++;
+			sprintf(var_temp, "__function_call%d", call_id);
+			if(instructions->type2 != LOCAL || instructions->address2 != 0){
+				fprintf(foutput, "	move.l #0,-(A7)\n");
+				b = 1;
+			} else {
+				b = 0;
+			}
+			fprintf(foutput, "	move.l #%s,-(A7)\n", var_temp);
+			fprintf(foutput, "	move.l ");
+			if(instructions->type1 == LOCAL){
+				fprintf(foutput, "%d(A7),-(A7)\n", (instructions->address1 + b + 1)*4);
+			} else if(instructions->type1 == REGISTER){
+				fprintf(foutput, "D%d,-(A7)\n", instructions->address1 - 1);
+			}
+			fprintf(foutput, "	move.l ");
+			if(instructions->type2 == LOCAL){
+				fprintf(foutput, "%d(A7),-(A7)\n", (instructions->address2 + b + 2)*4);
+			} else if(instructions->type2 == REGISTER){
+				fprintf(foutput, "D%d,-(A7)\n", instructions->address2 - 1);
+			}
+			fprintf(foutput, "	jmp __mul\n\n%s:", var_temp);
+			if(b){
+				fprintf(foutput, "\n	move.l ");
+				if(instructions->type2 == LOCAL){
+					fprintf(foutput, "(A7)+,%d(A7)", instructions->address2*4);
+				} else if(instructions->type2 == REGISTER){
+					fprintf(foutput, "(A7)+,D%d", instructions->address2 - 1);
+				}
+			}
 		} else if(
 				instructions->opcode == ADDOP ||
 				instructions->opcode == SUBOP ||
-				instructions->opcode == MULOP ||
-				instructions->opcode == DIVOP ||
 				instructions->opcode == OROP ||
 				instructions->opcode == ANDOP ||
 				instructions->opcode == LTOP ||
@@ -870,12 +902,6 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					break;
 				case SUBOP:
 					fprintf(foutput, "	sub.l ");
-					break;
-				case MULOP:
-					fprintf(foutput, "	MULL ");
-					break;
-				case DIVOP:
-					fprintf(foutput, "	DIVL ");
 					break;
 				case OROP:
 					fprintf(foutput, "	or.l ");

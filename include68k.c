@@ -20,6 +20,20 @@ void include68k(dictionary *global_space){
 			"	adda.l #3,A1\n"
 			"	trap #15\n"
 			"	adda.l #4,A7\n"
-			"	move.l (A7)+,A0\n"
-			"	jmp (A0)", 0);
+			"	rts\n",0);
+	include(global_space, "__mul",
+			"	move.l (A7),D7\n"
+			"	move.l 4(A7),D0\n"
+			"	mulu.w D0,D7\n"
+			"	move.l D0,D1\n"
+			"	mulu.w (A7)+,D0\n"
+			"	swap D1\n"
+			"	mulu.w (A7)+,D1\n"
+			"	add.w D1,D0\n"
+			"	swap D0\n"
+			"	clr.w D0\n"
+			"	add.l D0,D7\n"
+			"	adda.l #4,A7\n"
+			"	move.l D7,4(A7)\n"
+			"	rts",0);
 }
