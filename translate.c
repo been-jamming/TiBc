@@ -846,7 +846,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address2 - 1);
 			}
-		} else if(instructions->opcode == MULOP){
+		} else if(instructions->opcode == MULOP || instructions->opcode == DIVOP){
 			call_id = function_call_id;
 			function_call_id++;
 			sprintf(var_temp, "__function_call%d", call_id);
@@ -869,7 +869,11 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "D%d,-(A7)\n", instructions->address2 - 1);
 			}
-			fprintf(foutput, "	jmp __mul\n\n%s:", var_temp);
+			if(instructions->opcode == MULOP){
+				fprintf(foutput, "	jmp __mul\n\n%s:", var_temp);
+			} else {
+				fprintf(foutput, "	jmp __div\n\n%s:", var_temp);
+			}
 			if(b){
 				fprintf(foutput, "\n	move.l ");
 				if(instructions->type2 == LOCAL){
