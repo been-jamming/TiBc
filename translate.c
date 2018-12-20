@@ -1,4 +1,5 @@
 #include "translate.h"
+#include "include68k.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,8 +19,6 @@ instruction **global_instructions;
 unsigned int if_id = 0;
 unsigned int while_id = 0;
 unsigned int function_call_id = 0;
-
-void include68k(dictionary *global_space);
 
 instruction *create_instruction(unsigned char opcode){
 	instruction *output;
@@ -671,12 +670,17 @@ void _translate_program(void *void_var){
 
 	var = (variable *) void_var;
 	
-	operation = create_instruction(LABEL);
-	operation->name = strdup(var->name);
-	add_instruction(global_instructions, operation);
 	if(var->is_function){
-		translate_function(var, global_instructions, global_regs);
+		if(var->referenced || !strcmp(var->name, "main")){
+			operation = create_instruction(LABEL);
+			operation->name = strdup(var->name);
+			add_instruction(global_instructions, operation);
+			translate_function(var, global_instructions, global_regs);
+		}
 	} else {
+		operation = create_instruction(LABEL);
+		operation->name = strdup(var->name);
+		add_instruction(global_instructions, operation);
 		operation = create_instruction(CONSTANT);
 		operation->const_pointer = create_constant(INTEGER, 0);
 		if(var->type == GLOBALLIST){

@@ -1,7 +1,8 @@
 #include "dictionary.h"
 #include "compile.h"
+#include "include68k.h"
 
-void include(dictionary *global_space, char *var_name, unsigned char *data, unsigned int data_size){
+variable *include(dictionary *global_space, char *var_name, unsigned char *data, unsigned int data_size){
 	variable *var_pointer;
 
 	var_pointer = create_variable(GLOBAL, 0, var_name);
@@ -10,10 +11,11 @@ void include(dictionary *global_space, char *var_name, unsigned char *data, unsi
 	var_pointer->data = data;
 	var_pointer->data_size = data_size;
 	write_dictionary(global_space, var_name, var_pointer, 0);
+	return var_pointer;
 }
 
 void include68k(dictionary *global_space){
-	include(global_space, "putchar",
+	included_putchar68k = include(global_space, "putchar",
 			"	move.w #0,D0\n"
 			"	move.w #1,D1\n"
 			"	move.l A7,A1\n"
@@ -21,7 +23,7 @@ void include68k(dictionary *global_space){
 			"	trap #15\n"
 			"	adda.l #4,A7\n"
 			"	rts\n",0);
-	include(global_space, "__mul",
+	included_mul68k = include(global_space, "__mul",
 			"	move.l (A7),D7\n"
 			"	move.l 4(A7),D0\n"
 			"	mulu.w D0,D7\n"
@@ -36,7 +38,7 @@ void include68k(dictionary *global_space){
 			"	adda.l #4,A7\n"
 			"	move.l D7,4(A7)\n"
 			"	rts",0);
-	include(global_space, "__div",
+	included_div68k = include(global_space, "__div",
 			"	move.l (A7)+,D0\n"
 			"	move.l (A7)+,D1\n"
 			"	tst.l	D0\n"
@@ -99,7 +101,7 @@ void include68k(dictionary *global_space){
 			"	sub.l	D3,D1\n"
 			"	addq.w	#1,D0\n"
 			"\n"
-			"__udivDMle:"
+			"__udivDMle:\n"
 			"	dbf	D2,__udivDMls\n"
 			"	adda.l #2,A7\n"
 			"	move.l D0,4(A7)\n"
