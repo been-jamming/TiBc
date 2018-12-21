@@ -1,8 +1,11 @@
 #include "parse.h"
 #include "compile.h"
 #include "allocate.h"
+#include "include68k.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#define TARGET68k
 
 dictionary global_namespace;
 unsigned const int operator_precedence[] = {0, 127, 3, 3, 2, 2, 127, 127, 127, 127, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 1, 5};
@@ -21,6 +24,7 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 	output->is_function = 0;
 	output->is_data = 0;
 	output->size = 1;
+	output->referenced = 0;
 	
 	return output;
 }
@@ -176,6 +180,8 @@ expression *variable_expression(dictionary *global_space, dictionary *local_spac
 		}
 	}
 
+	output->var_pointer->referenced = 1;
+
 	return output;
 }
 
@@ -229,6 +235,13 @@ expression *compile_expression(dictionary *global_space, dictionary *local_space
 			child->expr2 = literal_expression(**token_list, const_list, const_offset);
 			child->expr2->parent = child;
 		} else if((*token_list)->type == OPERATOR){
+#ifdef TARGET68k
+			if((*token_list)->sub_type == MULTIPLY){
+				included_mul68k->referenced = 1;
+			} else if((*token_list)->sub_type == DIVIDE){
+				included_div68k->referenced = 1;
+			}
+#endif
 			current_expression->parent = create_expression(OPERATOR, (*token_list)->sub_type);
 			current_expression->parent->expr1 = current_expression;
 			if((*token_list)->sub_type == ELEMENT){

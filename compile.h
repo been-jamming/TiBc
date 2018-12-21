@@ -31,6 +31,7 @@ struct variable{
 	unsigned char is_data;
 	unsigned int offset;
 	unsigned int size;
+	unsigned char referenced;
 	char *name;
 	union{
 		block *function;
