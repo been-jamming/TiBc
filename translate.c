@@ -720,7 +720,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type1 == STACKRELATIVE){
 				fprintf(foutput, "A7,D7\n");
 				fprintf(foutput, "	move.l D7,-(A7)\n");
-				fprintf(foutput, "	add.l #%d,(A7)\n", instructions->address1);
+				fprintf(foutput, "	add.l #%d,(A7)", instructions->address1*4);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,-(A7)", instructions->address1 - 1);
 			}
