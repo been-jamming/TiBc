@@ -50,7 +50,6 @@ The language TiBc compiles currently is an extremely simple and B-like.
   * Example: `var my_function(a, b){var output; ... return output;}`
 #### Currently Supported Operators
 * Arithmetic operators:```+ - * /```
-  * The operators `*` and `/` have not been fully implemented in 68k assembly yet
 * Logical operators:```& | !```
 * Comparison operators:```< > == !=```
 * Referencing operators:```* &```
