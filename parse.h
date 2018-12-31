@@ -91,6 +91,12 @@
 
 typedef struct token token;
 
+//Token definition.
+//Tokens encompass LITERALS, OPERATORS, CONTROL CHARACTERS, KEYWORDS, UNARY OPERATORS, and IDENTIFIERS
+//
+//Each token has a type and a sub_type defined as one of the values at the beginning of this file.
+//The type alone gives enough information to handle the following tokens.
+//The sub_type gives information required to compile the tokens into an abstract syntax tree.
 struct token{
 	unsigned char type;
 	unsigned char sub_type;
@@ -101,28 +107,46 @@ struct token{
 	};
 };
 
+//Determines if a character is a letter.
 unsigned char is_alpha(unsigned char c);
 
+//Determines if a character is a digit.
 unsigned char is_digit(unsigned char c);
 
+//Increments *c until **c is not a whitespace character.
 void skip_whitespace(char **c);
 
+//Interprets an integer string starting at *c and returns the integer value.
+//Modifies *c such that it points to the next character after the integer.
 int get_integer(unsigned char **c);
 
+//Returns a new string containing the identifier name pointed to by *c.
+//Modifies *c such that it points to the next character after the identifier.
 char *get_identifier(char **c);
 
+//Prints a token for debugging purposes.
 void print_token(token t);
 
+//Gets the first token pointed to by *c.
+//Modifies *c such that it points to the next character after that token.
 token get_token(char **c);
 
+//Adds a token to the current list of tokens
 void add_token(token **token_list, token t, unsigned int *token_index, unsigned int *token_length);
 
+//Validates and tokenizes an expression pointed to by *c.
+//Modifies *c such that it points to the next character after that expression.
 void parse_expression(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length, token closing_token);
 
+//Validates and tokenizes a statement pointed to by *c.
+//Modifies *c such that it points to the next character after that statement.
 void parse_statement(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 
+//Validates and tokenizes a block of statements pointed to by *c.
+//Modifies *c such that it points to the next character after that block.
 void parse_block(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 
+//Validates and tokenizes a full program pointed to by *c.
 void parse_program(char **c, token **token_list, unsigned int *token_index, unsigned int *token_length);
 #endif
 

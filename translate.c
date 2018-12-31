@@ -457,6 +457,9 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					}
 
 					add_instruction(instructions, operation);
+				} else {
+					printf("Invalid use of '&' operator\n");
+					exit(1);
 				}
 			} else {
 				printf("Expected identifier after reference operator '&'");
