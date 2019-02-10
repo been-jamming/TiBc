@@ -457,6 +457,9 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 					}
 
 					add_instruction(instructions, operation);
+				} else {
+					printf("Invalid use of '&' operator\n");
+					exit(1);
 				}
 			} else {
 				printf("Expected identifier after reference operator '&'");
@@ -566,18 +569,30 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 		operation->address1 = 0;
 		add_instruction(instructions, operation);
 	} else if(s->type == KEYWORD && s->sub_type == IF){
-		translate_expression(s->expr, func, instructions, local_offset, regs, 1);
-		branch = create_instruction(BZSTACK);
-		branch->type1 = GLOBAL;
-
+		translate_expression(s->expr, func, instructions, local_offset, regs, 0);
+		
+		if(!s->expr->reg){
+			branch = create_instruction(BZSTACK);
+			branch->type1 = GLOBAL;
+			--*local_offset;
+		} else {
+			branch = create_instruction(BZOP);
+			branch->type1 = REGISTER;
+			branch->address1 = s->expr->reg;
+			branch->type2 = GLOBAL;
+			free_register(regs, s->expr->reg);
+		}
 		sprintf(var_temp, "__if%d", if_id);
 		if_id++;
 		label_length = strlen(var_temp);
 		new_label = malloc(sizeof(char)*(label_length + 1));
 		strcpy(new_label, var_temp);
-		branch->name = new_label;
+		if(!s->expr->reg){
+			branch->name = new_label;
+		} else {
+			branch->name2 = new_label;
+		}
 		add_instruction(instructions, branch);
-		--*local_offset;
 
 		translate_block(s->code, func, instructions, local_offset, regs);
 		operation = create_instruction(LABEL);
@@ -585,9 +600,18 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 		branch->next2 = operation;
 		add_instruction(instructions, operation);
 	} else if(s->type == KEYWORD && s->sub_type == WHILE){
-		translate_expression(s->expr, func, instructions, local_offset, regs, 1);
-		branch = create_instruction(BZSTACK);
-		branch->type1 = GLOBAL;
+		translate_expression(s->expr, func, instructions, local_offset, regs, 0);
+		if(!s->expr->reg){
+			branch = create_instruction(BZSTACK);
+			branch->type1 = GLOBAL;
+			--*local_offset;
+		} else {
+			branch = create_instruction(BZOP);
+			branch->type1 = REGISTER;
+			branch->address1 = s->expr->reg;
+			branch->type2 = GLOBAL;
+			free_register(regs, s->expr->reg);
+		}
 
 		id = while_id;
 		while_id++;
@@ -595,9 +619,12 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 		label_length = strlen(var_temp);
 		new_label = malloc(sizeof(char)*(label_length + 1));
 		strcpy(new_label, var_temp);
-		branch->name = new_label;
+		if(!s->expr->reg){
+			branch->name = new_label;
+		} else {
+			branch->name2 = new_label;
+		}
 		add_instruction(instructions, branch);
-		--*local_offset;
 
 		start_block = create_instruction(LABEL);
 		sprintf(var_temp, "__while%d", id);
@@ -609,13 +636,22 @@ void translate_statement(statement *s, block *func, instruction **instructions, 
 
 		translate_block(s->code, func, instructions, local_offset, regs);
 
-		translate_expression(s->expr, func, instructions, local_offset, regs, 1);
-		operation = create_instruction(BNZSTACK);
-		operation->type1 = GLOBAL;
-		operation->name = new_label2;
+		translate_expression(s->expr, func, instructions, local_offset, regs, 0);
+		if(!s->expr->reg){
+			operation = create_instruction(BNZSTACK);
+			operation->type1 = GLOBAL;
+			operation->name = new_label2;
+			--*local_offset;
+		} else {
+			operation = create_instruction(BNZOP);
+			operation->type1 = REGISTER;
+			operation->address1 = s->expr->reg;
+			operation->type2 = GLOBAL;
+			operation->name2 = new_label2;
+			free_register(regs, s->expr->reg);
+		}
 		operation->next2 = start_block;
 		add_instruction(instructions, operation);
-		--*local_offset;
 
 		operation = create_instruction(LABEL);
 		operation->name = new_label;
@@ -805,6 +841,34 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			fprintf(foutput, "	cmpi.l #0,D7\n");
 			if(instructions->type1 == GLOBAL){
 				fprintf(foutput, "	bne.w %s", instructions->name);
+			}
+		} else if(instructions->opcode == BZOP){
+			if(instructions->type1 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+			} else if(instructions->type1 == LITERAL){
+				if(instructions->const_pointer->type == INTEGER){
+					fprintf(foutput, "	move.l #%d,D7\n", instructions->const_pointer->int_value);
+				}
+			} else if(instructions->type1 == REGISTER){
+				fprintf(foutput, "	move.l D%d,D7\n", instructions->address1 - 1);
+			}
+			fprintf(foutput, "	cmpi.l #0,D7\n");
+			if(instructions->type2 == GLOBAL){
+				fprintf(foutput, "	beq.w %s", instructions->name2);
+			}
+		} else if(instructions->opcode == BNZOP){
+			if(instructions->type1 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+			} else if(instructions->type1 == LITERAL){
+				if(instructions->const_pointer->type == INTEGER){
+					fprintf(foutput, "	move.l #%d,D7\n", instructions->const_pointer->int_value);
+				}
+			} else if(instructions->type1 == REGISTER){
+				fprintf(foutput, "	move.l D%d,D7\n", instructions->address1 - 1);
+			}
+			fprintf(foutput, "	cmpi.l #0,D7\n");
+			if(instructions->type2 == GLOBAL){
+				fprintf(foutput, "	bne.w %s", instructions->name2);
 			}
 		} else if(instructions->opcode == SSP){
 			fprintf(foutput, "	adda.l ");
