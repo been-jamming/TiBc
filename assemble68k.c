@@ -106,6 +106,35 @@ instruction68k MOVE_instruction(address_mode address1, uint32_t arg1, address_mo
 	}
 }
 
+instruction68k NEG_instruction(address_mode address1, uint32_t arg1, uint32_t displacement1){
+	instruction68k output;
+
+	output.op = NEG;
+	if(address1 == DATAREG || address1 == ADDRREG || address1 == ADDR || address1 == ADDRPI || address1 == ADDRPD || address1 == ADDRDISP){
+		output.reg1 = arg1;
+	} else {
+		output.immediate1 = arg1;
+	}
+
+	if(address1 == ADDRDISP || address1 == PCDISP){
+		output.displacement1 = displacement1;
+	}
+}
+
+instruction68k NOT_instruction(address_mode address1, uint32_t arg1, uint32_t displacement1){
+	instruction68k output;
+	output.op = NOT;
+	if(address1 == DATAREG || address1 == ADDRREG || address1 == ADDR || address1 == ADDRPI || address1 == ADDRPD || address1 == ADDRDISP){
+		output.reg1 = arg1;
+	} else {
+		output.immediate1 = arg1;
+	}
+
+	if(address1 == ADDRDISP || address1 == PCDISP){
+		output.displacement1 = displacement1;
+	}
+}
+
 void write_instruction68k(instruction68k i){
 	switch(i.op){
 		case MOVE:
@@ -137,16 +166,40 @@ void write_instruction68k(instruction68k i){
 				write_bits(60, 6);
 			}
 			if(i.address1 == ADDRDISP || i.address1 == PCDISP || i.address1 == ABSLONG || i.address1 == IMMEDIATE){
-				write_long(i.displacement);
+				write_long(i.displacement1);
 			} else if(i.address1 == ABSSHORT){
-				write_word(i.displacement);
+				write_word(i.displacement1);
 			}
-			if(i.address2 == ADDRDISP || i.address2 == PCDISP || i.address2 == ABSLONG || i.address2 == IMMEDIATE){
-				write_long(i.displacement);
+			if(i.address2 == ADDRDISP || i.address2 == PCDISP || i.address2 == ABSLONG){
+				write_long(i.displacement2);
 			} else if(i.address2 == ABSSHORT){
-				write_word(i.displacement);
+				write_word(i.displacement2);
 			}
 			break;
+		case NEG:
+			write_bits(0b01000100, 8);
+			write_bits(0b10, 2);
+			if(i.address1 == DATAREG || i.address1 == ADDRREG || i.address1 == ADDR || i.address1 == ADDRPI || i.address1 == ADDRPD || i.address1 == ADDRDISP){
+				write_bits(i.address1, 3);
+				write_bits(i.reg1, 3);
+			} else if(i.address1 == ABSLONG){
+				write_bits(15, 6);
+			}
+			if(i.address1 == ADDRDISP || i.address1 == ABSLONG){
+				write_long(i.displacement1);
+			}
+		case NOT:
+			write_bits(0b01000110, 8);
+			write_bits(0b10, 2);
+			if(i.address1 == DATAREG || i.address1 == ADDRREG || i.address1 == ADDR || i.address1 == ADDRPI || i.address1 == ADDRPD || i.address1 == ADDRDISP){
+				write_bits(i.address1, 3);
+				write_bits(i.reg1, 3);
+			} else if(i.address1 == ABSLONG){
+				write_bits(15, 6);
+			}
+			if(i.address1 == ADDRDISP || i.address1 == ABSLONG){
+				write_long(i.displacement1);
+			}
 	}
 }
 

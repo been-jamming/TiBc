@@ -16,16 +16,25 @@ variable *include(dictionary *global_space, char *var_name, unsigned char *data,
 
 void include68k(dictionary *global_space){
 	included_putchar68k = include(global_space, "putchar",
+			"	move.w #6,D0\n"
+			"	adda.l #2,A7\n"
+			"	move.w (A7)+,D1\n"
+			"	trap #15\n"
+			"	rts",0);
+		/*	
 			"	move.w #0,D0\n"
 			"	move.w #1,D1\n"
 			"	move.l A7,A1\n"
 			"	adda.l #3,A1\n"
 			"	trap #15\n"
 			"	adda.l #4,A7\n"
-			"	rts\n",0);
+			"	rts\n",0);*/
 	included_mul68k = include(global_space, "__mul",
+			"	move.l D0,-(A7)\n"
+			"	move.l D1,-(A7)\n"
+			"	move.l 8(A7),-(A7)\n"
 			"	move.l (A7),D7\n"
-			"	move.l 4(A7),D0\n"
+			"	move.l 16(A7),D0\n"
 			"	mulu.w D0,D7\n"
 			"	move.l D0,D1\n"
 			"	mulu.w (A7)+,D0\n"
@@ -35,7 +44,9 @@ void include68k(dictionary *global_space){
 			"	swap D0\n"
 			"	clr.w D0\n"
 			"	add.l D0,D7\n"
-			"	adda.l #4,A7\n"
+			"	move.l (A7)+,D1\n"
+			"	move.l (A7)+,D0\n"
+			"	adda.l #8,A7\n"
 			"	move.l D7,4(A7)\n"
 			"	rts",0);
 	included_div68k = include(global_space, "__div",
