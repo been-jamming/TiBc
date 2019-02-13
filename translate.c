@@ -1,5 +1,6 @@
 #include "translate.h"
 #include "include68k.h"
+#include "optimize1.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -1357,6 +1358,8 @@ int main(int argc, char **argv){
 	compile_program(&global_space, token_list_pointer, &token_length, &const_list, &const_offset);
 
 	free(token_start);
+
+	optimize1(global_space);
 
 	regs = create_reg_list(7);
 
