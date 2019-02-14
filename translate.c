@@ -413,6 +413,20 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		}
 
 		add_instruction(instructions, operation);
+	} else if(expr->type == UNARY && expr->sub_type == BITNOT){
+		translate_expression(expr->expr2, func, instructions, local_offset, regs, to_stack);
+		operation = create_instruction(BITNOTOP);
+		if(!expr->expr2->reg){
+			operation->type1 = LOCAL;
+			operation->address1 = 0;
+			expr->reg = 0;
+		} else {
+			operation->type1 = REGISTER;
+			operation->address1 = expr->expr2->reg;
+			expr->reg = expr->expr2->reg;
+		}
+
+		add_instruction(instructions, operation);
 	} else if(expr->type == UNARY && expr->sub_type == REFERENCE){
 		if(expr->expr2){
 			if(expr->expr2->type == IDENTIFIER){
@@ -853,7 +867,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "	move.l D%d,D7\n", instructions->address1 - 1);
 			}
-			fprintf(foutput, "	cmpi.l #0,D7\n");
+			fprintf(foutput, "	tst.l D7\n");
 			if(instructions->type2 == GLOBAL){
 				fprintf(foutput, "	beq.w %s", instructions->name2);
 			}
@@ -867,7 +881,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "	move.l D%d,D7\n", instructions->address1 - 1);
 			}
-			fprintf(foutput, "	cmpi.l #0,D7\n");
+			fprintf(foutput, "	tst.l D7\n");
 			if(instructions->type2 == GLOBAL){
 				fprintf(foutput, "	bne.w %s", instructions->name2);
 			}
@@ -1066,9 +1080,20 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				}
 			}
 		} else if(instructions->opcode == NOTOP){
+			fprintf(foutput, "	tst.l ");
+			if(instructions->type1 == LOCAL){
+				fprintf(foutput, "%d(A7)\n", instructions->address1*4);
+				fprintf(foutput, "	seq %d(A7)\n", instructions->address1*4 + 3);
+				fprintf(foutput, "	andi.l #$000000FF,%d(A7)", instructions->address1*4);
+			} else if(instructions->type1 == REGISTER){
+				fprintf(foutput, "D%d\n", instructions->address1 - 1);
+				fprintf(foutput, "	seq D%d\n", instructions->address1 - 1);
+				fprintf(foutput, "	andi.l #$000000FF,D%d", instructions->address1 - 1);
+			}
+		} else if(instructions->opcode == BITNOTOP){
 			fprintf(foutput, "	not.l ");
 			if(instructions->type1 == LOCAL){
-				fprintf(foutput, "%d(A7)", instructions->address1);
+				fprintf(foutput, "%d(A7)", instructions->address1*4);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address1 - 1);
 			}
@@ -1078,7 +1103,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 		} else if(instructions->opcode == DEREF){
 			fprintf(foutput, "	move.l ");
 			if(instructions->type1 == LOCAL){
-				fprintf(foutput, "%d(A7),A0\n", instructions->address1);
+				fprintf(foutput, "%d(A7),A0\n", instructions->address1*4);
 				fprintf(foutput, "	move.l (A0),%d(A7)", instructions->address1*4);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d,A0\n", instructions->address1 - 1);

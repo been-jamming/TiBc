@@ -133,6 +133,10 @@ token get_token(char **c){
 			output.type = UNARY;
 			output.sub_type = NOT;
 		}
+	} else if(**c == '~'){
+		++*c;
+		output.type = UNARY;
+		output.sub_type = BITNOT;
 	} else if(**c == '<'){
 		++*c;
 		output.type = OPERATOR;

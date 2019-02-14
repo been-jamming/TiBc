@@ -39,9 +39,8 @@
 	#define BITAND 19
 	#define BITOR 20
 	#define BITXOR 21
-	#define BITNOT 22
-	#define ELEMENT 23
-	#define NOTEQUALS 24
+	#define ELEMENT 22
+	#define NOTEQUALS 23
 
 //Control
 
@@ -78,6 +77,7 @@
 	#define REFERENCE 2
 	#define NEGATE 3
 	#define NOT 4
+	#define BITNOT 5
 
 //Identifier
 

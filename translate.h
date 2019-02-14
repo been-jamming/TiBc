@@ -51,6 +51,7 @@
 #define LSROP 45
 #define ADDPTR 46
 #define DATA 47
+#define BITNOTOP 48
 
 typedef struct instruction instruction;
 
