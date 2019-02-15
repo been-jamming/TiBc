@@ -3,6 +3,8 @@
 #include "translate.h"
 #include "optimize1.h"
 #include "include68k.h"
+#include "compile.h"
+#include "main.h"
 
 /*
  * B compiler
@@ -18,16 +20,45 @@
 
 static void _empty_callback(void *v){}
 
+token *token_list = (token *) 0;
+token *token_start = (token *) 0;
+token **token_list_pointer = (token **) 0;
+linked_list *const_list = (linked_list *) 0;
+linked_list *const_list_start = (linked_list *) 0;
+reg_list *regs = (reg_list *) 0;
+instruction *instructions = (instruction *) 0;
+instruction *original_instructions = (instruction *) 0;
+dictionary global_space;
+char *program;
+char *program_start;
+
+void safe_exit(int exit_code){
+	printf("Line %d:\n%s", current_line, error_message);
+	if(token_start){
+		free(token_start);
+	}
+	free_space(global_space);
+	if(original_instructions){
+		free_instructions(original_instructions);
+	}
+	free_dictionary(global_space, _empty_callback);
+	if(regs){
+		free_reg_list(regs);
+	}
+	linked_list *last;
+
+	while(const_list_start){
+		last = const_list_start;
+		const_list_start = const_list_start->next;
+		free(last);
+	}
+
+	exit(exit_code);
+}
+
 int main(int argc, char **argv){
-	char *program;
-	char *program_start;
-	token *token_list;
-	token *token_start;
-	token **token_list_pointer;
 	char *input_name;
 	char *output_name;
-	linked_list *const_list;
-	linked_list *const_list_start;
 	unsigned int token_length;
 	unsigned int num_tokens;
 	unsigned int token_index;
@@ -35,11 +66,13 @@ int main(int argc, char **argv){
 	unsigned int local_offset;
 	unsigned int i;
 	unsigned long int program_length;
-	reg_list *regs;
 
 	FILE *finput;
 	FILE *foutput;
 
+	global_space = create_dictionary((void *) 0);
+	current_line = 1;
+	
 	if(argc <= 1){
 		printf("Error: no input files\n");
 		exit(1);
@@ -63,8 +96,6 @@ int main(int argc, char **argv){
 	fclose(finput);
 	program[program_length] = (char) 0;
 
-	instruction *instructions;
-	instruction *original_instructions;
 	instructions = create_instruction(0);
 	original_instructions = instructions;
 
@@ -83,12 +114,6 @@ int main(int argc, char **argv){
 
 	token_start = token_list;
 	num_tokens = token_length;
-
-	dictionary global_space;
-	dictionary local_space;
-	variable *var_pointer;
-
-	global_space = create_dictionary((void *) 0);
 
 	include68k(&global_space);
 	

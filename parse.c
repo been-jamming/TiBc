@@ -7,6 +7,7 @@ Parser for B compiler
 #include <string.h>
 #include <errno.h>
 #include "parse.h"
+#include "main.h"
 
 token last_token = (token) {.type = 0, .sub_type = 0};
 
@@ -20,6 +21,9 @@ unsigned char is_digit(unsigned char c){
 
 void skip_whitespace(char **c){
 	while(**c == ' ' || **c == '	' || **c == '\n' || **c == '\r'){
+		if(**c == '\n'){
+			current_line++;
+		}
 		++*c;
 	}
 }
@@ -172,9 +176,9 @@ token get_token(char **c){
 			output.type = OPERATOR;
 			output.sub_type = ASSIGN;
 		} else {
-			printf("Unknown operator: =%c\n", **c);
+			sprintf(error_message, "Unknown operator: =%c\n", **c);
 			getchar();
-			exit(1);
+			safe_exit(1);
 		}
 	} else if(**c == '('){
 		++*c;
@@ -203,7 +207,8 @@ token get_token(char **c){
 		output.char_value = **c;
 		++*c;
 		if(**c != '\''){
-			printf("Expected closing token ' instead of %c\n", **c);
+			sprintf(error_message, "Expected closing token ' instead of %c\n", **c);
+			safe_exit(1);
 		}
 		++*c;
 	} else if(**c == '['){
@@ -379,8 +384,8 @@ token get_token(char **c){
 		output.type = CONTROL;
 		output.sub_type = SEMICOLON;
 	} else {
-		printf("Unrecognized token starting at: %c", **c);
-		exit(1);
+		sprintf(error_message, "Unrecognized token starting at: %c", **c);
+		safe_exit(1);
 	}
 	
 	last_token = output;
@@ -449,16 +454,16 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			}
 
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type) && (next_token.type != CONTROL || next_token.sub_type != CLOSEPARENTHESES)){
-				printf("Expected operator instead of: %c\n", *temp_c2);
-				exit(1);
+				sprintf(error_message, "Expected operator instead of: %c\n", *temp_c2);
+				safe_exit(1);
 			} else if(next_token.type == OPERATOR){
 				add_token(token_list, next_token, token_index, token_length);
 			} else if((next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type) || (next_token.type == CONTROL && next_token.sub_type == CLOSEPARENTHESES)){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
 			} else {
-				printf("Unexpected token: %c\n", *temp_c2);
-				exit(1);
+				sprintf(error_message, "Unexpected token: %c\n", *temp_c2);
+				safe_exit(1);
 			}
 		} else if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
 			add_token(token_list, current_token, token_index, token_length);
@@ -492,16 +497,16 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 			}
 			
 			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){
-				printf("Expected operator instead of: %c\n", *temp_c2);
-				exit(1);
+				sprintf(error_message, "Expected operator instead of: %c\n", *temp_c2);
+				safe_exit(1);
 			} else if(next_token.type == OPERATOR){
 				add_token(token_list, next_token, token_index, token_length);
 			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
 			} else {
-				printf("Unexpected token: %c\n", *temp_c2);
-				exit(1);
+				sprintf(error_message, "Unexpected token: %c\n", *temp_c2);
+				safe_exit(1);
 			}
 		} else if(current_token.type == OPERATOR && current_token.sub_type == MULTIPLY){
 			current_token.type = UNARY;
@@ -514,15 +519,15 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 		} else if(current_token.type == UNARY){
 			add_token(token_list, current_token, token_index, token_length);
 		} else {
-			printf("Unexpected token: %c\n", *(*c - 1));
-			exit(1);
+			sprintf(error_message, "Unexpected token: %c\n", *(*c - 1));
+			safe_exit(1);
 		}
 		skip_whitespace(c);
 		if(!**c){
-			printf("Expected closing token: ");
+			sprintf(error_message, "Expected closing token: ");
 			print_token(closing_token);
 			printf("\n");
-			exit(1);
+			safe_exit(1);
 		}
 		if(do_next_token){
 			temp_c = *c;
@@ -551,8 +556,8 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != CONTROL || current_token.sub_type != OPENPARENTHESES){
-				printf("Expected opening token '('\n");
-				exit(1);
+				sprintf(error_message, "Expected opening token '('\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 			parse_expression(c, token_list, token_index, token_length, (token) {.type = CONTROL, .sub_type = CLOSEPARENTHESES});
@@ -563,8 +568,8 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != CONTROL || current_token.sub_type != OPENBRACES){
-				printf("Expected opening token '{'\n");
-				exit(1);
+				sprintf(error_message, "Expected opening token '{'\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 			parse_block(c, token_list, token_index, token_length);
@@ -573,8 +578,8 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != IDENTIFIER){
-				printf("Expected identifier\n");
-				exit(1);
+				sprintf(error_message, "Expected identifier\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 			skip_whitespace(c);
@@ -584,23 +589,23 @@ void parse_statement(char **c, token **token_list, unsigned int *token_index, un
 				skip_whitespace(c);
 				current_token = get_token(c);
 				if(current_token.type != LITERAL || current_token.sub_type != INTEGER){
-					printf("Expected integer literal\n");
-					exit(1);
+					sprintf(error_message, "Expected integer literal\n");
+					safe_exit(1);
 				}
 				add_token(token_list, current_token, token_index, token_length);
 				skip_whitespace(c);
 				current_token = get_token(c);
 				if(current_token.type != CONTROL || current_token.sub_type != CLOSEBRACKET){
-					printf("Expected ']' token\n");
-					exit(1);
+					sprintf(error_message, "Expected ']' token\n");
+					safe_exit(1);
 				}
 				add_token(token_list, current_token, token_index, token_length);
 				skip_whitespace(c);
 				current_token = get_token(c);
 			}
 			if(current_token.type != CONTROL || current_token.sub_type != SEMICOLON){
-				printf("Expected ';' token\n");
-				exit(1);
+				sprintf(error_message, "Expected ';' token\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 		} else if(current_token.sub_type == RETURN){
@@ -625,8 +630,8 @@ void parse_block(char **c, token **token_list, unsigned int *token_index, unsign
 	skip_whitespace(c);
 	current_token = get_token(c);
 	if(current_token.type != CONTROL || current_token.sub_type != OPENBRACES){
-		printf("Expected '{' token\n");
-		exit(1);
+		sprintf(error_message, "Expected '{' token\n");
+		safe_exit(1);
 	}
 	
 	add_token(token_list, current_token, token_index, token_length);
@@ -636,8 +641,8 @@ void parse_block(char **c, token **token_list, unsigned int *token_index, unsign
 		parse_statement(c, token_list, token_index, token_length);
 		skip_whitespace(c);
 		if(**c == (char) 0){
-			printf("Expected '}' token\n");
-			exit(1);
+			sprintf(error_message, "Expected '}' token\n");
+			safe_exit(1);
 		}
 	}
 
@@ -652,16 +657,16 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 	while(**c){
 		current_token = get_token(c);
 		if(current_token.type != KEYWORD || current_token.sub_type != VAR){
-			printf("Expected 'var' keyword\n");
-			exit(1);
+			sprintf(error_message, "Expected 'var' keyword\n");
+			safe_exit(1);
 		}
 
 		add_token(token_list, current_token, token_index, token_length);
 		skip_whitespace(c);
 		current_token = get_token(c);
 		if(current_token.type != IDENTIFIER){
-			printf("Expected identifier\n");
-			exit(1);
+			sprintf(error_message, "Expected identifier\n");
+			safe_exit(1);
 		}
 		add_token(token_list, current_token, token_index, token_length);
 		skip_whitespace(c);
@@ -671,22 +676,22 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != LITERAL || current_token.sub_type != INTEGER){
-				printf("Expected integer literal\n");
-				exit(1);
+				sprintf(error_message, "Expected integer literal\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != CONTROL || current_token.sub_type != CLOSEBRACKET){
-				printf("Expected ']' token\n");
-				exit(1);
+				sprintf(error_message, "Expected ']' token\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 			skip_whitespace(c);
 			current_token = get_token(c);
 			if(current_token.type != CONTROL || current_token.sub_type != SEMICOLON){
-				printf("Expected ';' token\n");
-				exit(1);
+				sprintf(error_message, "Expected ';' token\n");
+				safe_exit(1);
 			}
 			add_token(token_list, current_token, token_index, token_length);
 		} else if(current_token.type == CONTROL && current_token.sub_type == OPENPARENTHESES){
@@ -695,8 +700,8 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 			current_token = get_token(c);
 			while(**c && (current_token.type != CONTROL || current_token.sub_type != CLOSEPARENTHESES)){
 				if(current_token.type != IDENTIFIER){
-					printf("Expected identifier\n");
-					exit(1);
+					sprintf(error_message, "Expected identifier\n");
+					safe_exit(1);
 				}
 				add_token(token_list, current_token, token_index, token_length);
 				skip_whitespace(c);
@@ -709,8 +714,8 @@ void parse_program(char **c, token **token_list, unsigned int *token_index, unsi
 					skip_whitespace(c);
 					current_token = get_token(c);
 				} else {
-					printf("Expected ',' or ')' tokens\n");
-					exit(1);
+					sprintf(error_message, "Expected ',' or ')' tokens\n");
+					safe_exit(1);
 				}
 			}
 			add_token(token_list, current_token, token_index, token_length);
