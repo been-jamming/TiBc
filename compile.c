@@ -30,8 +30,10 @@ variable *create_variable(unsigned char type, unsigned int offset, char *name){
 }
 
 void free_variable(variable *var){
-	free(var->name);
-	
+	if(!var->is_data){
+		free(var->name);
+	}
+
 	if(var->is_function && !var->is_data){
 		free(var->function->local_size);
 		free_dictionary(*(var->function->variables), _free_variable);

@@ -782,7 +782,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "	move.l D7,%d(A7)", (instructions->address1 - 1)*4);
 			} else if(instructions->type1 == LOCALINDIRECT){
 				fprintf(foutput, "%d(A7),A0\n", instructions->address1*4);
-				fprintf(foutput, "	move.l (A7)+,(A0)", instructions->address1);
+				fprintf(foutput, "	move.l (A7)+,(A0)");
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "(A7)+,D%d", instructions->address1 - 1);
 			} else if(instructions->type1 == GLOBALINDIRECT){
@@ -899,7 +899,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "#%d,", instructions->const_pointer->int_value);
 			}
 			if(instructions->type2 == LOCAL){
-				fprintf(foutput, "D7", instructions->address2*4);
+				fprintf(foutput, "D7");
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address2 - 1);
 			}
@@ -909,7 +909,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 		} else if(instructions->opcode == ADDPTR){
 			if(instructions->type2 == LOCAL){
 				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
-				fprintf(foutput, "	lsl.l #2,D7\n", instructions->address2*4);
+				fprintf(foutput, "	lsl.l #2,D7\n");
 				fprintf(foutput, "	move.l D7,%d(A7)\n", instructions->address2*4);
 			} else if(instructions->type2 == REGISTER){
 				fprintf(foutput, "	lsl.l #2,D%d\n", instructions->address2 - 1);
@@ -917,7 +917,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 
 			if(instructions->type1 == LOCAL){
 				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
-				fprintf(foutput, "	add.l D7,", instructions->address1*4);
+				fprintf(foutput, "	add.l D7,");
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "	add.l D%d,", instructions->address1 - 1);
 			}

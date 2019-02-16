@@ -31,9 +31,25 @@ instruction *original_instructions = (instruction *) 0;
 dictionary global_space;
 char *program;
 char *program_start;
+unsigned int token_length;
+unsigned char DONE_PARSING;
 
 void safe_exit(int exit_code){
+	unsigned int i;
+	
 	printf("Line %d:\n%s", current_line, error_message);
+
+	if(!DONE_PARSING && token_list){
+		for(i = 0; i < token_length; i++){
+			if(token_list[i].type == IDENTIFIER){
+				free(token_list[i].string_value);
+			}
+		}
+		free(token_list);
+	}
+	if(program_start){
+		free(program_start);
+	}	
 	if(token_start){
 		free(token_start);
 	}
@@ -59,7 +75,6 @@ void safe_exit(int exit_code){
 int main(int argc, char **argv){
 	char *input_name;
 	char *output_name;
-	unsigned int token_length;
 	unsigned int num_tokens;
 	unsigned int token_index;
 	unsigned int const_offset = 0;
@@ -72,6 +87,7 @@ int main(int argc, char **argv){
 
 	global_space = create_dictionary((void *) 0);
 	current_line = 1;
+	DONE_PARSING = 0;
 	
 	if(argc <= 1){
 		printf("Error: no input files\n");
@@ -110,7 +126,9 @@ int main(int argc, char **argv){
 
 	program_start = program;
 	parse_program(&program, token_list_pointer, &token_index, &token_length);
+	DONE_PARSING = 1;
 	free(program_start);
+	program_start = (char *) 0;
 
 	token_start = token_list;
 	num_tokens = token_length;

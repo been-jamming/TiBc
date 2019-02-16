@@ -88,6 +88,10 @@ token get_token(char **c){
 	token output;
 	
 	skip_whitespace(c);
+	if(!**c){
+		sprintf(error_message, "Unexpected end of file\n");
+		safe_exit(1);
+	}
 	if(is_digit(**c)){
 		output.type = LITERAL;
 		output.sub_type = INTEGER;
@@ -384,7 +388,7 @@ token get_token(char **c){
 		output.type = CONTROL;
 		output.sub_type = SEMICOLON;
 	} else {
-		sprintf(error_message, "Unrecognized token starting at: %c", **c);
+		sprintf(error_message, "Unrecognized token starting at: %c\n", **c);
 		safe_exit(1);
 	}
 	
@@ -422,6 +426,10 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 	skip_whitespace(c);
 	temp_c = *c;
 	current_token = get_token(c);
+	if(current_token.type == closing_token.type && current_token.sub_type == closing_token.sub_type){
+		sprintf(error_message, "Unexpected empty expression\n");
+		safe_exit(1);
+	}
 	while((current_token.type != closing_token.type || current_token.sub_type != closing_token.sub_type) && (current_token.type != CONTROL || current_token.sub_type != CLOSEPARENTHESES)){
 		if(current_token.type == LITERAL || current_token.type == IDENTIFIER){
 			add_token(token_list, current_token, token_index, token_length);
