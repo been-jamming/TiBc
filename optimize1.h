@@ -1,7 +1,7 @@
 #ifndef OPTIMIZE_INCLUDED
 #define OPTIMIZE_INCLUDED
 
-unsigned char OPTIMIZE_CONTINUE;
+unsigned char OPTIMIZE1_CONTINUE;
 
 void propogate_constants(expression *expr);
 

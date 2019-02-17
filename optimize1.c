@@ -29,31 +29,31 @@ void propogate_constants(expression *expr){
 			switch(expr->sub_type){
 				case ADD:
 					expr->const_pointer->int_value = value_a + value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case SUBTRACT:
 					expr->const_pointer->int_value = value_a - value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case MULTIPLY:
 					expr->const_pointer->int_value = value_a*value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case DIVIDE:
 					expr->const_pointer->int_value = value_a/value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case AND:
 					expr->const_pointer->int_value = value_a&value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case OR:
 					expr->const_pointer->int_value = value_a|value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 				case XOR:
 					expr->const_pointer->int_value = value_a^value_b;
-					OPTIMIZE_CONTINUE = 1;
+					OPTIMIZE1_CONTINUE = 1;
 					break;
 			}
 			expr->sub_type = INTEGER;
@@ -99,10 +99,10 @@ void _optimize1(void *void_var){
 }
 
 void optimize1(dictionary global_space){
-	OPTIMIZE_CONTINUE = 1;
+	OPTIMIZE1_CONTINUE = 1;
 	
-	while(OPTIMIZE_CONTINUE){
-		OPTIMIZE_CONTINUE = 0;
+	while(OPTIMIZE1_CONTINUE){
+		OPTIMIZE1_CONTINUE = 0;
 		iterate_dictionary(global_space, _optimize1);
 	}
 }

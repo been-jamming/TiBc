@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "translate.h"
 #include "optimize1.h"
+#include "optimize2.h"
 #include "include68k.h"
 #include "compile.h"
 #include "main.h"
@@ -144,6 +145,8 @@ int main(int argc, char **argv){
 	regs = create_reg_list(7);
 
 	translate_program(global_space, &instructions, regs);
+
+	sweep_instructions(&original_instructions);
 	
 	foutput = fopen(output_name, "w");
 	print_instructions_68k(original_instructions, foutput);
