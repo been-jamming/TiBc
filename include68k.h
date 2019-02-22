@@ -6,6 +6,8 @@ void include68k(dictionary *global_space);
 
 variable *included_putchar68k;
 
+variable *included_getchar68k;
+
 variable *included_mul68k;
 
 variable *included_div68k;

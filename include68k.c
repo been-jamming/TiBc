@@ -21,14 +21,12 @@ void include68k(dictionary *global_space){
 			"	move.w (A7)+,D1\n"
 			"	trap #15\n"
 			"	rts",0);
-		/*	
-			"	move.w #0,D0\n"
-			"	move.w #1,D1\n"
-			"	move.l A7,A1\n"
-			"	adda.l #3,A1\n"
+	included_getchar68k = include(global_space, "getchar",
+			"	move.w #5,D0\n"
+			"	move.l #0,D1\n"
 			"	trap #15\n"
-			"	adda.l #4,A7\n"
-			"	rts\n",0);*/
+			"	move.l D1,4(A7)\n"
+			"	rts",0);
 	included_mul68k = include(global_space, "__mul",
 			"	move.l D0,-(A7)\n"
 			"	move.l D1,-(A7)\n"
