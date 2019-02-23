@@ -27,6 +27,24 @@ void include68k(dictionary *global_space){
 			"	trap #15\n"
 			"	move.l D1,4(A7)\n"
 			"	rts",0);
+	included_setcolor68k = include(global_space, "setcolor",
+			"	move.l #80,D0\n"
+			"	move.l (A7)+,D1\n"
+			"	move.l (A7)+,D2\n"
+			"	move.l (A7)+,D3\n"
+			"	lsl.w #8,D2\n"
+			"	lsl.l #8,D3\n"
+			"	lsl.l #8,D3\n"
+			"	or.l D2,D1\n"
+			"	or.l D3,D1\n"
+			"	trap #15\n"
+			"	rts",0);
+	included_setpix68k = include(global_space, "setpix",
+			"	move.l #82,D0\n"
+			"	move.l (A7)+,D2\n"
+			"	move.l (A7)+,D1\n"
+			"	trap #15\n"
+			"	rts",0);
 	included_mul68k = include(global_space, "__mul",
 			"	move.l D0,-(A7)\n"
 			"	move.l D1,-(A7)\n"
