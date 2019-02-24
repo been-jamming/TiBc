@@ -57,206 +57,210 @@ void write_word(uint16_t w){
 	write_byte(byte, current_file);
 }
 
-label_entry *create_label_entry(){
+unsigned int get_file_pointer(){
+	return FGetPos(current_file.fsp);
+}
+
+label_entry *create_label_entry(unsigned int file_pointer){
 	label_entry *output;
+
 	output = malloc(sizeof(label_entry));
-	output.label_seen = 0;
-	output.label_pointers = (label_pointer *) 0;
+	output->found = 0;
+	output->file_pointer = file_pointer;
+	
 	return output;
 }
 
-label_pointer *create_label_pointer(unsigned int file_position){
-	label_pointer *output;
-	output = malloc(sizeof(label_pointer));
-	output.file_position = file_position;
-	output.next = (label_pointer *) 0;
-	return output;
-}
-
-void add_label_pointer(label_pointer **head, unsigned int file_position){
-	label_pointer *new_label_pointer;
-	new_label_pointer = create_label_pointer(file_position);
-	new_label_pointer->next = *head;
-	*head = new_label_pointer;
-}
-
-instruction68k MOVE_instruction(address_mode address1, uint32_t arg1, address_mode address2, uint32_t arg2, uint32_t displacement1, uint32_t displacment2){
-	instruction68k output;
-	
-	output.address1 = address1;
-	output.address2 = address2;
-	if(address1 == DATAREG || address1 == ADDRREG || address1 == ADDR || address1 == ADDRPI || address1 == ADDRPD || address1 == ADDRDISP){
-		output.reg1 = arg1;
-	} else {
-		output.immediate1 = arg1;
-	}
-
-	if(address2 == DATAREG || address2 == ADDRREG || address2 == ADDR || address2 == ADDRPI || address2 == ADDRPD || address2 == ADDRDISP){
-		output.reg2 = arg2;
-	} else {
-		output.immediate2 = arg2;
-	}
-
-	if(address1 == ADDRDISP || address1 == PCDISP){
-		output.displacement1 = displacement1;
-	}
-	
-	if(address2 == ADDRDISP || address2 == PCDISP){
-		output.displacement2 = displacement2;
-	}
-}
-
-instruction68k NEG_instruction(address_mode address1, uint32_t arg1, uint32_t displacement1){
-	instruction68k output;
-
-	output.op = NEG;
-	if(address1 == DATAREG || address1 == ADDRREG || address1 == ADDR || address1 == ADDRPI || address1 == ADDRPD || address1 == ADDRDISP){
-		output.reg1 = arg1;
-	} else {
-		output.immediate1 = arg1;
-	}
-
-	if(address1 == ADDRDISP || address1 == PCDISP){
-		output.displacement1 = displacement1;
-	}
-}
-
-instruction68k NOT_instruction(address_mode address1, uint32_t arg1, uint32_t displacement1){
-	instruction68k output;
-	output.op = NOT;
-	if(address1 == DATAREG || address1 == ADDRREG || address1 == ADDR || address1 == ADDRPI || address1 == ADDRPD || address1 == ADDRDISP){
-		output.reg1 = arg1;
-	} else {
-		output.immediate1 = arg1;
-	}
-
-	if(address1 == ADDRDISP || address1 == PCDISP){
-		output.displacement1 = displacement1;
-	}
-}
-
-void write_instruction68k(instruction68k i){
-	switch(i.op){
-		case MOVE:
-			write_bits(0b0010, 4);
-			if(i.address1 == DATAREG || i.address1 == ADDRREG || i.address1 == ADDR || i.address1 == ADDRPI || i.address1 == ADDRPD || i.address1 == ADDRDISP){
-				write_bits(i.reg1, 3);
-				write_bits(i.address1, 3);
-			} else if(i.address1 == PCDISP){
-				write_bits(2, 3);
-				write_bits(PCDISP, 3);
-			} else if(i.address1 == ABSSHORT){
-				write_bits(7, 6);
-			} else if(i.address1 == ABSLONG){
-				write_bits(15, 6);
-			} else if(i.address1 == IMMEDIATE){
-				write_bits(39, 6);
-			}
-			if(i.address2 == DATAREG || i.address2 == ADDRREG || i.address2 == ADDR || i.address2 == ADDRPI || i.address2 == ADDRPD || i.address2 == ADDRDISP){
-				write_bits(i.address2, 3);
-				write_bits(i.reg2);
-			} else if(i.address2 == PCDISP){
-				write_bits(PCDISP, 3);
-				write_bits(2, 3);
-			} else if(i.address2 == ABSSHORT){
-				write_bits(56, 6);
-			} else if(i.address2 == ABSLONG){
-				write_bits(57, 6);
-			} else if(i.address2 == IMMEDIATE){
-				write_bits(60, 6);
-			}
-			if(i.address1 == ADDRDISP || i.address1 == PCDISP || i.address1 == ABSLONG || i.address1 == IMMEDIATE){
-				write_long(i.displacement1);
-			} else if(i.address1 == ABSSHORT){
-				write_word(i.displacement1);
-			}
-			if(i.address2 == ADDRDISP || i.address2 == PCDISP || i.address2 == ABSLONG){
-				write_long(i.displacement2);
-			} else if(i.address2 == ABSSHORT){
-				write_word(i.displacement2);
-			}
+void write_size1(SIZE size){
+	switch(size){
+		case BYTE:
+			write_bits(0, 2);
 			break;
-		case NEG:
-			write_bits(0b01000100, 8);
-			write_bits(0b10, 2);
-			if(i.address1 == DATAREG || i.address1 == ADDRREG || i.address1 == ADDR || i.address1 == ADDRPI || i.address1 == ADDRPD || i.address1 == ADDRDISP){
-				write_bits(i.address1, 3);
-				write_bits(i.reg1, 3);
-			} else if(i.address1 == ABSLONG){
-				write_bits(15, 6);
-			}
-			if(i.address1 == ADDRDISP || i.address1 == ABSLONG){
-				write_long(i.displacement1);
-			}
-		case NOT:
-			write_bits(0b01000110, 8);
-			write_bits(0b10, 2);
-			if(i.address1 == DATAREG || i.address1 == ADDRREG || i.address1 == ADDR || i.address1 == ADDRPI || i.address1 == ADDRPD || i.address1 == ADDRDISP){
-				write_bits(i.address1, 3);
-				write_bits(i.reg1, 3);
-			} else if(i.address1 == ABSLONG){
-				write_bits(15, 6);
-			}
-			if(i.address1 == ADDRDISP || i.address1 == ABSLONG){
-				write_long(i.displacement1);
-			}
+		case WORD:
+			write_bits(1, 2);
+			break;
+		case LONG:
+			write_bits(2, 2);
 	}
 }
 
-void write_asm68k(instruction *instructions){
-	label_entry *label;
-	unsigned int fpos;
-
-	while(instructions->next1){
-		instructions = instructions->next1;
-		if(instructions->opcode == PUSH){
-			if(instructions->type1 == LITERAL){
-				if(instructions->const_pointer->type == INTEGER){
-					write_bits(0b0010, 4);
-					write_bits(0b111100, 6);
-					write_bits(0b111100, 6);
-					write_long(instructions->const_pointer->int_value);
-				}
-			} else if(instructions->type1 == LOCAL){
-				write_bits(0b00101110, 8);
-				write_bits(0b00101111, 8);
-				write_word(instructions->address1*4);
-				write_bits(0b00101110, 8);
-				write_bits(0b00100111, 8);
-			} else if(instructions->type1 == GLOBAL){
-				write_bits(0b00101111, 8);
-				write_bits(0b00111100, 8);
-				
-				label = (label_entry *) dictionary_read(labels, instructions->name);
-				if(!label){
-					label = create_label_entry();
-					dictionary_write(&labels, instructions->name, label);
-				}
-
-				if(label->label_seen){
-					write_long(label->address);
-				} else {
-					fpos = FGetPos(current_file);
-					add_label_pointer(&(label->label_pointers), fpos);
-					write_long(0);
-				}
-			} else if(instructions->type1 == GLOBALINDIRECT){
-				write_bits(0b00100011, 8);
-				write_bits(0b11100111, 8);
-				
-				label = (label_entry *) dicitonary_read(labels, instructions->name);
-				if(!label){
-					label = create_label_entry();
-					dictionary_write(&labels, instructions->name, label);
-				}
-
-				if(label->label_seen){
-					write_long(label->address);
-				} else {
-					fpos = FGetPos(current_file);
-					add_label_pointer(&(label->label_pointers), fpos);
-					write_long(0);
-				}
-		}
+void write_size2(SIZE size){
+	switch(size){
+		case WORD:
+			write_bits(0, 1);
+			break;
+		case LONG:
+			write_bits(1, 1);
+			break;
 	}
 }
+
+void write_size3(SIZE size){
+	switch(size){
+		case BYTE:
+			write_bits(1, 2);
+			break;
+		case WORD:
+			write_bits(3, 2);
+			break;
+		case LONG:
+			write_bits(2, 2);
+	}
+}
+
+void write_mode1(ADDRESS_MODE mode, unsigned int reg){	
+	switch(mode){
+		case PC_DISP:
+			write_bits(2, 3);
+			break;
+		case PC_IDX:
+			write_bits(3, 3);
+			break;
+		case ABS_SHORT:
+			write_bits(0, 3);
+			break;
+		case ABS_LONG:
+			write_bits(1, 3);
+			break;
+		case IMMEDIATE:
+			write_bits(4, 3);
+			break;
+		default:
+			write_bits(reg, 3);
+	}
+
+	switch(mode){
+		case DATA_REG:
+			write_bits(0, 3);
+			break;
+		case ADDRESS_REG:
+			write_bits(1, 3);
+			break;
+		case ADDRESS:
+			write_bits(2, 3);
+			break;
+		case ADDRESS_PI:
+			write_bits(3, 3);
+			break;
+		case ADDRESS_PD:
+			write_bits(4, 3);
+			break;
+		case ADDRESS_DISP:
+			write_bits(5, 3);
+			break;
+		case ADDRESS_IDX:
+			write_bits(6, 3);
+			break;
+		default:
+			write_bits(7, 3);
+	}
+}
+
+void write_mode2(ADDRESS_MODE mode, unsigned int reg){	
+	switch(mode){
+		case DATA_REG:
+			write_bits(0, 3);
+			break;
+		case ADDRESS_REG:
+			write_bits(1, 3);
+			break;
+		case ADDRESS:
+			write_bits(2, 3);
+			break;
+		case ADDRESS_PI:
+			write_bits(3, 3);
+			break;
+		case ADDRESS_PD:
+			write_bits(4, 3);
+			break;
+		case ADDRESS_DISP:
+			write_bits(5, 3);
+			break;
+		case ADDRESS_IDX:
+			write_bits(6, 3);
+			break;
+		default:
+			write_bits(7, 3);
+	}
+
+	switch(mode){
+		case PC_DISP:
+			write_bits(2, 3);
+			break;
+		case PC_IDX:
+			write_bits(3, 3);
+			break;
+		case ABS_SHORT:
+			write_bits(0, 3);
+			break;
+		case ABS_LONG:
+			write_bits(1, 3);
+			break;
+		case IMMEDIATE:
+			write_bits(4, 3);
+			break;
+		default:
+			write_bits(reg, 3);
+	}
+}
+
+void write_immediate(unsigned long int immediate, SIZE size){
+	switch(size){
+		case BYTE:
+			write_bits(immediate, 8);
+			break;
+		case WORD:
+			write_word(immediate);
+			break;
+		case LONG:
+			write_long(immediate);
+	}
+}
+
+void write_operation(operation o){
+	switch(o.op){
+		case ORI:
+			write_bits(0, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, o.size);
+			break;
+		case ANDI:
+			write_bits(2, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, o.size);
+			break;
+		case SUBI:
+			write_bits(4, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, o.size);
+			break;
+		case ADDI:
+			write_bits(6, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, o.size);
+			break;
+		case EORI:
+			write_bits(10, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, o.size);
+			break;
+		case CMPI:
+			write_bits(12, 8);
+			write_size1(o.size);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immedaite, o.size);
+			break;
+		case BTST:
+			write_bits(8, 8);
+			write_bits(0, 2);
+			write_mode2(o.mode1, o.reg1);
+			write_immediate(o.immediate, BYTE);
+			break;
+	}
+}
+

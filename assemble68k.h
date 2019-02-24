@@ -1,51 +1,111 @@
 enum OPCODE{
+	ORI,
+	ANDI,
+	SUBI,
+	ADDI,
+	EORI,
+	CMPI,
+	BTST,
+	BCHG,
+	BCLR,
+	BSET,
+	MOVEP,
+	MOVEA,
 	MOVE,
+	NEGX,
+	CLR,
 	NEG,
 	NOT,
+	EXT,
+	NBCD,
+	SWAP,
+	PEA,
+	ILLEGAL,
+	TAS,
+	TST,
+	TRAP,
+	LINK,
+	UNLK,
+	RESET,
+	NOP,
+	STOP,
+	RTE,
+	RTS,
+	TRAPV,
+	RTR,
 	JSR,
 	JMP,
 	MOVEM,
-	ADD,
+	LEA,
+	CHK,
+	ADDQ,
+	SUBQ,
+	Scc,
+	DBcc,
+	BRA,
+	BSR,
+	Bcc,
+	MOVEQ,
+	DIVU,
+	DIVS,
+	SBCD,
+	OR,
 	SUB,
-	CMP,
+	SUBX,
+	SUBA,
 	EOR,
+	CMPM,
+	CMP,
+	CMPA,
+	MULU,
+	MULS,
+	ABCD,
+	EXG,
 	AND,
-	OR
+	ADD,
+	ADDX,
+	ADDA,
+	ASd,
+	LSd,
+	ROXd,
+	ROd
 };
 
-//The code for the address mode is represented as the symbol's value
-//This is done for convenience in the write_instructions68k routine
-#define DATAREG 0
-#define ADDRREG 1
-#define ADDR 2
-#define ADDRPI 3
-#define ADDRPD 4
-#define ADDRDISP 5
-#define PCDISP 7
+enum SIZE{
+	BYTE,
+	WORD,
+	LONG
+};
 
-//The following three addressing modes actually have a code of 7
-#define ABSSHORT 8
-#define ABSLONG 9
-#define IMMEDIATE 10
+enum ADDRESS_MODE{
+	DATA_REG,
+	ADDRESS_REG,
+	ADDRESS,
+	ADDRESS_PI,
+	ADDRESS_PD,
+	ADDRESS_DISP,
+	ADDRESS_IDX,
+	PC_DISP,
+	PC_IDX,
+	ABS_SHORT,
+	ABS_LONG,
+	IMMEDIATE
+};
 
-typedef unsigned char address_mode;
+typedef struct operation operation;
 
-typedef struct instruction68k instruction68k;
-
-struct instruction68k{
+struct operation{
 	OPCODE op;
-	address_mode address1;
-	address_mode address2;
-	union{
-		uint32_t immediate1;
-		unsigned char reg1;
-	};
-	union{
-		uint32_t immediate2;
-		unsigned char reg2;
-	};
-	uint32_t displacement1;
-	uint32_t displacement2;
+	SIZE size;
+	ADDRESS_MODE mode1;
+	ADDRESS_MODE mode2;
+	unsigned char reg1;
+	unsigned int displacement1;
+	unsigned char data_reg1;
+	unsigned char reg2;
+	unsigned int displacement2;
+	unsigned char data_reg2;
+	unsigned long int immediate;
 };
 
 typedef struct file_bits file_bits;
@@ -59,17 +119,11 @@ struct file_bits{
 typedef struct label_entry label_entry;
 
 struct label_entry{
-	unsigned char label_seen;
+	unsigned char found;
 	union{
-		label_pointer *label_pointers;
-		unsigned long int address;
+		unsigned int address;
+		unsigned int file_pointer;
 	};
-};
-
-typedef struct label_pointer label_pointer;
-
-struct label_pointer{
-	unsigned int file_position;
-	label_pointer *next;
+	label_entry *next;
 };
 
