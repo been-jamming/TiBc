@@ -121,9 +121,9 @@ void free_expression(expression *e){
 			free_expression((expression *) last->value);
 			free(last);
 		}
-	} else if(e->type == IDENTIFIER){
-		//free_variable(e->var_pointer);
-	} else {
+	} else if(e->type == LOADSTACK){
+		free_constant(e->const_pointer);
+	} else if(e->type != IDENTIFIER){
 		printf("unknown expression free type %d\n", (int) e->type);
 	}
 

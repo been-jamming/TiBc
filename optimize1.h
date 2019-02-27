@@ -5,11 +5,11 @@ unsigned char OPTIMIZE1_CONTINUE;
 
 void propogate_constants(expression *expr);
 
-void optimize1_expression(expression *expr);
+void optimize1_expression(expression *expr, block *func);
 
-void optimize1_statement(statement *s);
+void optimize1_statement(statement *s, block *func);
 
-void optimize1_block(block *b);
+void optimize1_block(block *b, block *func);
 
 void optimize1(dictionary global_space);
 

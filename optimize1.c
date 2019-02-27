@@ -16,7 +16,7 @@ void propogate_constants(expression *expr){
 	long int value_a;
 	long int value_b;
 
-	if(expr->type == OPERATOR && (expr->sub_type == ADD || expr->sub_type == SUBTRACT || expr->sub_type == MULTIPLY || expr->sub_type == DIVIDE || expr->sub_type == AND || expr->sub_type == OR || expr->sub_type == XOR)){
+	if(expr->type == OPERATOR && (expr->sub_type == ADD || expr->sub_type == SUBTRACT || expr->sub_type == MULTIPLY || expr->sub_type == DIVIDE || expr->sub_type == AND || expr->sub_type == OR || expr->sub_type == XOR || expr->sub_type == ELEMENT)){
 		propogate_constants(expr->expr1);
 		propogate_constants(expr->expr2);
 		if(expr->expr1->type == LITERAL && expr->expr2->type == LITERAL && expr->expr1->sub_type == INTEGER && expr->expr2->sub_type == INTEGER){
@@ -61,31 +61,56 @@ void propogate_constants(expression *expr){
 	}
 }
 
-void optimize1_expression(expression *expr){
-	propogate_constants(expr);
+void const_index_expression(expression *expr, block *func){
+	unsigned int calculated_index;
+	variable *var_pointer;
+
+	if(expr->type == UNARY || (expr->type == OPERATOR && expr->sub_type == ASSIGN)){
+		const_index_expression(expr->expr2, func);
+	} else if(expr->type == OPERATOR){
+		const_index_expression(expr->expr1, func);
+		const_index_expression(expr->expr2, func);
+	}
+
+	if(expr->type == OPERATOR && expr->sub_type == ELEMENT && expr->expr1->type == IDENTIFIER && expr->expr1->var_pointer->type == LOCALLIST && expr->expr2->type == LITERAL){
+		calculated_index = *(func->local_size) - expr->expr2->const_pointer->int_value + 1;
+		var_pointer = expr->expr1->var_pointer;
+		expr->reg = expr->expr1->reg;
+		free_expression(expr->expr1);
+		free_expression(expr->expr2);
+		expr->type = LOADSTACK;
+		expr->const_pointer = create_constant(INTEGER, 0);
+		expr->const_pointer->int_value = calculated_index;
+		OPTIMIZE1_CONTINUE = 1;
+	}
 }
 
-void optimize1_statement(statement *s){
+void optimize1_expression(expression *expr, block *func){
+	propogate_constants(expr);
+	const_index_expression(expr, func);
+}
+
+void optimize1_statement(statement *s, block *func){
 	if(!s->type){
-		optimize1_expression(s->expr);
+		optimize1_expression(s->expr, func);
 	} else if(s->type == KEYWORD){
 		if(s->sub_type == IF || s->sub_type == WHILE){
-			optimize1_block(s->code);
+			optimize1_block(s->code, func);
 		}
 		if(s->sub_type == RETURN || s->sub_type == IF || s->sub_type == WHILE){
-			optimize1_expression(s->expr);
+			optimize1_expression(s->expr, func);
 		}
 	}
 }
 
-void optimize1_block(block *b){
+void optimize1_block(block *b, block *func){
 	unsigned char output;
 	linked_list *statements;
 
 	statements = b->statements;
 	while(statements->next){
 		statements = statements->next;
-		optimize1_statement((statement *) statements->value);
+		optimize1_statement((statement *) statements->value, func);
 	}
 }
 
@@ -94,7 +119,7 @@ void _optimize1(void *void_var){
 
 	var = (variable *) void_var;
 	if(var->is_function && !var->is_data){
-		optimize1_block(var->function);
+		optimize1_block(var->function, var->function);
 	}
 }
 

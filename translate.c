@@ -1,4 +1,5 @@
 #include "translate.h"
+#include "main.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -167,7 +168,7 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				}
 				operation->type1 = LITERAL;
 				operation->const_pointer = create_constant(INTEGER, 0);
-				operation->const_pointer->int_value = 2;
+				operation->const_pointer->int_value = VARSIZE;
 				add_instruction(instructions, operation);
 				operation = create_instruction(ADDOP);
 			} else {
@@ -525,10 +526,31 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 		add_instruction(instructions, operation);
 		*local_offset -= num_args + 1;
 		expr->reg = 0;
+	} else if(expr->type == LOADSTACK){
+		if(!to_stack){
+			reg = allocate_register(regs);
+		} else {
+			reg = 0;
+		}
+		
+		if(reg){
+			expr->reg = reg;
+			operation = create_instruction(MOV);
+			operation->type1 = LOCAL;
+			operation->address1 = *local_offset + expr->const_pointer->int_value;
+			operation->type2 = REGISTER;
+			operation->address2 = expr->reg;
+		} else {
+			expr->reg = 0;
+			operation = create_instruction(PUSH);
+			operation->type1 = LOCAL;
+			operation->address1 = *local_offset + expr->const_pointer->int_value;
+			++*local_offset;
+		}
+		add_instruction(instructions, operation);
 	} else {
 		printf("unrecognized expression %d\n", (int) expr->type);
 	}
-
 }
 
 void translate_statement(statement *s, block *func, instruction **instructions, unsigned int *local_offset, reg_list *regs){
