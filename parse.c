@@ -147,12 +147,24 @@ token get_token(char **c){
 		output.sub_type = BITNOT;
 	} else if(**c == '<'){
 		++*c;
-		output.type = OPERATOR;
-		output.sub_type = LESSTHAN;
+		if(**c == '<'){
+			++*c;
+			output.type = OPERATOR;
+			output.sub_type = LEFTSHIFT;
+		} else {
+			output.type = OPERATOR;
+			output.sub_type = LESSTHAN;
+		}
 	} else if(**c == '>'){
 		++*c;
-		output.type = OPERATOR;
-		output.sub_type = GREATERTHAN;
+		if(**c == '>'){
+			++*c;
+			output.type = OPERATOR;
+			output.sub_type = RIGHTSHIFT;
+		} else {
+			output.type = OPERATOR;
+			output.sub_type = GREATERTHAN;
+		}
 	} else if(**c == '='){
 		++*c;
 		if(**c == '='){

@@ -41,10 +41,12 @@
 	#define BITXOR 21
 	#define ELEMENT 22
 	#define NOTEQUALS 23
+	#define LEFTSHIFT 24
+	#define RIGHTSHIFT 25
 	//Intermediate optimization operations
 	//
 	//These cannot be programmatically used but are internally used by the optimizer
-	#define LOADSTACK 24
+	#define LOADSTACK 26
 
 
 //Control

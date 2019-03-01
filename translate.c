@@ -157,6 +157,10 @@ void translate_expression(expression *expr, block *func, instruction **instructi
 				operation = create_instruction(OROP);
 			} else if(expr->sub_type == AND){
 				operation = create_instruction(ANDOP);
+			} else if(expr->sub_type == LEFTSHIFT){
+				operation = create_instruction(LSLOP);
+			} else if(expr->sub_type == RIGHTSHIFT){
+				operation = create_instruction(LSROP);
 			} else if(expr->sub_type == ELEMENT){
 				operation = create_instruction(LSLOP);
 				if(!expr->expr2->reg){
@@ -912,22 +916,6 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 					fprintf(foutput, "#%d,A7", -instructions->const_pointer->int_value*4);
 				}
 			}
-		} else if(instructions->opcode == LSLOP){
-			if(instructions->type2 == LOCAL){
-				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
-			}
-			fprintf(foutput, "	lsl.l ");
-			if(instructions->type1 == LITERAL){
-				fprintf(foutput, "#%d,", instructions->const_pointer->int_value);
-			}
-			if(instructions->type2 == LOCAL){
-				fprintf(foutput, "D7");
-			} else if(instructions->type2 == REGISTER){
-				fprintf(foutput, "D%d", instructions->address2 - 1);
-			}
-			if(instructions->type2 == LOCAL){
-				fprintf(foutput, "\n	move.l D7,%d(A7)", instructions->address2*4);
-			}
 		} else if(instructions->opcode == ADDPTR){
 			if(instructions->type2 == LOCAL){
 				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
@@ -1116,6 +1104,42 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 				fprintf(foutput, "%d(A7)", instructions->address1*4);
 			} else if(instructions->type1 == REGISTER){
 				fprintf(foutput, "D%d", instructions->address1 - 1);
+			}
+		} else if(instructions->opcode == LSLOP){
+			if(instructions->type1 == REGISTER && instructions->type2 == REGISTER){
+				fprintf(foutput, "	lsl.l D%d,D%d", instructions->address1 - 1, instructions->address2 - 1);
+			} else if(instructions->type1 == REGISTER && instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
+				fprintf(foutput, "	lsl.l D%d,D7\n", instructions->address1 - 1);
+				fprintf(foutput, "	move.l D7,%d(A7)", instructions->address2*4);
+			} else if(instructions->type1 == LOCAL && instructions->type2 == REGISTER){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+				fprintf(foutput, "	lsl.l D7,D%d\n", instructions->address2 - 1);
+			} else if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l D0,-(A7)\n");
+				fprintf(foutput, "	move.l %d(A7),D0\n", (instructions->address1 + 1)*4);
+				fprintf(foutput, "	move.l %d(A7),D7\n", (instructions->address2 + 1)*4);
+				fprintf(foutput, "	lsl.l D0,D7\n");
+				fprintf(foutput, "	move.l D7,%d(A7)\n", (instructions->address2 + 1)*4);
+				fprintf(foutput, "	move.l (A7)+,D0");
+			}
+		} else if(instructions->opcode == LSROP){
+			if(instructions->type1 == REGISTER && instructions->type2 == REGISTER){
+				fprintf(foutput, "	lsr.l D%d,D%d", instructions->address1 - 1, instructions->address2 - 1);
+			} else if(instructions->type1 == REGISTER && instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address2*4);
+				fprintf(foutput, "	lsr.l D%d,D7\n", instructions->address1 - 1);
+				fprintf(foutput, "	move.l D7,%d(A7)", instructions->address2*4);
+			} else if(instructions->type1 == LOCAL && instructions->type2 == REGISTER){
+				fprintf(foutput, "	move.l %d(A7),D7\n", instructions->address1*4);
+				fprintf(foutput, "	lsr.l D7,D%d\n", instructions->address2 - 1);
+			} else if(instructions->type1 == LOCAL && instructions->type2 == LOCAL){
+				fprintf(foutput, "	move.l D0,-(A7)\n");
+				fprintf(foutput, "	move.l %d(A7),D0\n", (instructions->address1 + 1)*4);
+				fprintf(foutput, "	move.l %d(A7),D7\n", (instructions->address2 + 1)*4);
+				fprintf(foutput, "	lsr.l D0,D7\n");
+				fprintf(foutput, "	move.l D7,%d(A7)\n", (instructions->address2 + 1)*4);
+				fprintf(foutput, "	move.l (A7)+,D0");
 			}
 		} else if(instructions->opcode == JMPSTACK){
 			fprintf(foutput, "	movea.l (A7)+,A0\n");

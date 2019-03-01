@@ -12,6 +12,8 @@ variable *included_setcolor68k;
 
 variable *included_setpix68k;
 
+variable *included_rect68k;
+
 variable *included_mul68k;
 
 variable *included_div68k;
