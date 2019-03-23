@@ -8,7 +8,7 @@
 #define TARGET68k
 
 dictionary global_namespace;
-unsigned const int operator_precedence[] = {0, 127, 3, 3, 2, 2, 127, 127, 127, 127, 5, 4, 4, 4, 4, 2, 6, 6, 6, 6, 6, 6, 6, 1, 5};
+unsigned const int operator_precedence[] = {0, 127, 3, 3, 2, 2, 127, 127, 127, 127, 6, 5, 5, 5, 5, 2, 7, 7, 7, 7, 7, 7, 7, 1, 4, 4};
 
 static void _empty_callback(void *v){}
 
