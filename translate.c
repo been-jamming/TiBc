@@ -911,7 +911,7 @@ void print_instructions_68k(instruction *instructions, FILE *foutput){
 			}
 		} else if(instructions->opcode == SSP){
 			fprintf(foutput, "	adda.l ");
-			if(instructions->type1 = LITERAL){
+			if(instructions->type1 == LITERAL){
 				if(instructions->const_pointer->type == INTEGER){
 					fprintf(foutput, "#%d,A7", -instructions->const_pointer->int_value*4);
 				}
@@ -1246,7 +1246,7 @@ void print_instructions(instruction *instructions, FILE *foutput){
 			}
 		} else if(instructions->opcode == SSP){
 			fprintf(foutput, "SSP ");
-			if(instructions->type1 = LITERAL){
+			if(instructions->type1 == LITERAL){
 				if(instructions->const_pointer->type == INTEGER){
 					fprintf(foutput, "%d", instructions->const_pointer->int_value);
 				}

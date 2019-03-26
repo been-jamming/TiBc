@@ -1,9 +1,21 @@
 CC = gcc
 
-CFLAGS = -O3
+CFLAGS = -O3 -Wall
 
 default: linked_list.o dictionary.o parse.o compile.o translate.o allocate.o include68k.o optimize1.o optimize2.o main.o
 	$(CC) $(CFLAGS) linked_list.o dictionary.o parse.o compile.o translate.o allocate.o include68k.o optimize1.o optimize2.o main.o -o TiBc
+
+clean:
+	del linked_list.o
+	del dictionary.o
+	del parse.o
+	del compile.o
+	del translate.o
+	del allocate.o
+	del include68k.o
+	del optimize1.o
+	del optimize2.o
+	del main.o
 
 linked_list.o: linked_list.c linked_list.h
 	$(CC) $(CFLAGS) -c linked_list.c

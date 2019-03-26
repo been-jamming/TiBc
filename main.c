@@ -105,6 +105,11 @@ int main(int argc, char **argv){
 	}
 
 	finput = fopen(input_name, "rb");
+	if(!finput){
+		printf("Error: input file %s does not exist\n", input_name);
+		free_dictionary(global_space, _empty_callback);
+		exit(1);
+	}
 	fseek(finput, 0, SEEK_END);
 	program_length = ftell(finput);
 	fseek(finput, 0, SEEK_SET);
