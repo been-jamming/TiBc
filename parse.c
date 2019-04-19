@@ -516,12 +516,12 @@ void parse_expression(char **c, token **token_list, unsigned int *token_index, u
 				}
 			}
 			
-			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type)){
+			if(next_token.type != OPERATOR && current_token.type != LITERAL && (next_token.type != closing_token.type || next_token.sub_type != closing_token.sub_type) && (next_token.type != CONTROL || next_token.sub_type != CLOSEPARENTHESES)){
 				sprintf(error_message, "Expected operator instead of: %c\n", *temp_c2);
 				safe_exit(1);
 			} else if(next_token.type == OPERATOR){
 				add_token(token_list, next_token, token_index, token_length);
-			} else if(next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type){
+			} else if((next_token.type == closing_token.type && next_token.sub_type == closing_token.sub_type) || (next_token.type == CONTROL && next_token.sub_type == CLOSEPARENTHESES)){
 				add_token(token_list, next_token, token_index, token_length);
 				return;
 			} else {
